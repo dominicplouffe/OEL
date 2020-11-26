@@ -252,6 +252,10 @@ class NotificationBody(models.Model):
         ('invite', 'Invitation'),
         ('confirmation', 'Confirmation'),
     )
+    DELIVERY_METHOD = (
+        ('email', 'Email'),
+        ('text', 'Text')
+    )
 
     org = models.ForeignKey(Org, on_delete=models.CASCADE, null=True)
     notification_type = models.CharField(
@@ -261,3 +265,6 @@ class NotificationBody(models.Model):
         choices=TYPES
     )
     content = models.CharField(max_length=10000, null=True, blank=True)
+    delivery = models.CharField(
+        max_length=20, null=True, blank=True, choices=DELIVERY_METHOD
+    )
