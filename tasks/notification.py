@@ -19,11 +19,13 @@ def notification_check(
 
                 if org_user.notification_type == "email":
                     ping.notified_on = datetime.utcnow()
-                    mail.send_mail(
+                    mail.send_html_mail(
                         org_user.email_address,
-                        "OnErrorLog Success : %s" % ping.name,
-                        "Your ping has been recovered, everything is"
-                        " back to normal"
+                        "OnErrorLog Success : %s " % ping.name,
+                        "ping_recovered.html",
+                        {
+                            'title': "OnErrorLog Success : %s " % ping.name
+                        }
                     )
                 else:
                     ping.notified_on = datetime.utcnow()
@@ -32,7 +34,7 @@ def notification_check(
                         org_user.phone_number,
                         "OnErrorLog Success : %s - "
                         "Your ping has been recovered, everything is"
-                        " back to normal" % ping.name
+                        " back to normal." % ping.name
                     )
             else:
                 send_callback(ping, fail_res, response_time, 'success')
@@ -49,20 +51,28 @@ def notification_check(
             if ping.notification_type == "team":
                 if org_user.notification_type == "email":
                     ping.notified_on = datetime.utcnow()
-                    mail.send_mail(
+
+                    mail.send_html_mail(
                         org_user.email_address,
                         "OnErrorLog Failure : %s " % ping.name,
-                        "We could not ping your enpoint.  Please login to"
-                        "onErrorLog and check it out"
+                        "ping_failure.html",
+                        {
+                            'title': "OnErrorLog Failure : %s " % ping.name,
+                            'doc_link': ping.doc_link
+                        }
                     )
                 else:
                     ping.notified_on = datetime.utcnow()
+                    body = "OnErrorLog Failure : %s - "
+                    "We could not ping your enpoint.  Please login to"
+                    " onErrorLog and check it out." % ping.name
+
+                    if ping.doc_link and ping.doc_link.startswith('http'):
+                        body += " - Documentation: %s" % ping.doc_link
 
                     text.sent_text_message(
                         org_user.phone_number,
-                        "OnErrorLog Failure : %s - "
-                        "We could not ping your enpoint.  Please login to"
-                        "onErrorLog and check it out" % ping.name
+                        body
                     )
             else:
                 send_callback(ping, fail_res, response_time, 'failure')
