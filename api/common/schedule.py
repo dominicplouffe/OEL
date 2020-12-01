@@ -1,4 +1,4 @@
-from api.models import Schedule
+from api.models import Schedule, OrgUser
 
 
 def add_user_to_schedule(org_user, org):
@@ -38,19 +38,19 @@ def remove_user_from_schedule(org_user, org):
 
         usr.delete()
     except Schedule.DoesNotExist:
-        pass
+        return None
 
 
-def change_user_order(start_index, end_index, org):
+def update_user_order(user_id, org, new_index):
+    try:
+        usr = OrgUser.objects.get(id=user_id, org=org)
 
-    sched = list(Schedule.objects.filter(org=org))
+        sched = Schedule.objects.get(org=org, org_user=usr)
+        sched.order = new_index
+        sched.save()
 
-    current_user = sched.pop(start_index)
-    sched.insert(end_index, current_user)
-
-    for i, s in enumerate(sched):
-        s.order = i + 1
-        s.save()
+    except OrgUser.DoesNotExist:
+        return None
 
 
 def get_on_call_user(org):
