@@ -28,7 +28,7 @@ def send_html_mail(email, subject, template, context):
     from_email = formataddr(
         (
             str(Header('OnErrorLog Notification', 'utf-8')),
-            'notification@onerrorlog.com'
+            'dominic@dplouffe.ca'
         )
     )
 
@@ -48,12 +48,14 @@ def send_test_email(to):
 
 def send_confirmation_email(to_email, code, host):
 
-    send_mail(
+    send_html_mail(
         to_email,
         'onErrorLog: Please Confirm Your Email Address',
-        """onErrorLog: Please Confirm Your Email Address
-        
-        Your confirmation code is: %s""" % (code)
+        'email_confirmation.html',
+        {
+            'title': 'onErrorLog: Email Confirmation',
+            'code': code
+        }
     )
 
 
@@ -61,22 +63,24 @@ def send_invite_email(to_email, host, code):
 
     url = '%s/auth/accept-invite?code=%s' % (host, code)
 
-    send_mail(
+    send_html_mail(
         to_email,
-        'onErrorLog: You have been invite',
-        """You have been invited to onErrorLog
-
-        Click the link below to accept your
-         invitation and to complete your profile.
-
-         %s""" % url
+        'onErrorLog: You have been invited',
+        'invite.html',
+        {
+            'title': 'onErrorLog: You have been invited',
+            'url': url
+        }
     )
 
 
 def send_going_oncall_email(to_email):
 
-    send_mail(
+    send_html_mail(
         to_email,
-        "onErrorLog: You are going on call",
-        "Just letting you know that you are going on call for the next 7 days"
+        'onErrorLog: You are going on call',
+        'going_oncall.html',
+        {
+            'title': 'onErrorLog: You are going on call'
+        }
     )
