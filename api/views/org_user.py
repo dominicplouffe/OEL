@@ -265,11 +265,15 @@ def finish_invite(request, *args, **kwargs):
 
 
 @api_view(['POST'])
-def reorder_user(request, *args, **kwargs):
+def update_user_order(request, *args, **kwargs):
 
-    start_index = request.data.get('start_index')
-    end_index = request.data.get('end_index')
+    user_id = request.data.get('user_id')
+    new_index = request.data.get('new_index')
 
-    schedule.change_user_order(start_index, end_index, request.org)
+    try:
+        schedule.update_user_order(user_id, request.org, new_index)
+
+    except OrgUser.DoesNotExist:
+        return Response({}, status=status.HTTP_403_FORBIDDEN)
 
     return Response({}, status=status.HTTP_200_OK)

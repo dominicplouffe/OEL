@@ -12,7 +12,7 @@ from api.views.failure import FailureViewSet, failure_count
 from api.views.ping_header import PingHeaderViewSet
 from api.views.org_user import (
     OrgUserViewSet, send_invite, check_invite, finish_invite, resend_invite,
-    reorder_user
+    update_user_order
 )
 from api.views.org import OrgViewSet
 from api.views.auth import (
@@ -64,7 +64,11 @@ urlpatterns = [
     path('auth/resend-invite', resend_invite, name='resend-invite'),
 
     # Org User
-    path('org_user/reorder_user', reorder_user, name="reorder-user"),
+    path(
+        'org_user/update_user_order',
+        update_user_order,
+        name="update-user-order"
+    ),
 
     # Pings
     path('ping-test/<int:id>/', ping_test, name='ping-test'),
