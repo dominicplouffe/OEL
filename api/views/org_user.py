@@ -1,7 +1,7 @@
 import re
 import json
 from random import randrange
-from api.models import OrgUser
+from api.models import OrgUser, Org, Schedule
 from django.contrib.auth.models import User
 from api.base import AuthenticatedViewSet
 from rest_framework.permissions import BasePermission
@@ -275,5 +275,26 @@ def update_user_order(request, *args, **kwargs):
 
     except OrgUser.DoesNotExist:
         return Response({}, status=status.HTTP_403_FORBIDDEN)
+
+    return Response({}, status=status.HTTP_200_OK)
+
+
+@api_view(['POST', 'GET'])
+def send_notification_update(request, *args, **kwargs):
+
+    offcall_user_id = request.data.get('offcall_id')
+    oncall_user_id = request.data.get('oncall_id')
+
+    old_user = OrgUser.objects.get(id=offcall_user_id)
+    if old_user.notification_type == "email":
+        mail.send_going_offcall_email(old_user.email_address)
+    else:
+        text.send_going_offcall(old_user.phone_number)
+
+    current_user = OrgUser.objects.get(id=oncall_user_id)
+    if current_user.notification_type == "email":
+        mail.send_going_oncall_email(current_user.email_address)
+    else:
+        text.send_going_oncall(current_user.phone_number)
 
     return Response({}, status=status.HTTP_200_OK)

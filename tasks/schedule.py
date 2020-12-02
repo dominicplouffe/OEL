@@ -24,17 +24,32 @@ def reschedule():
 
     for org in models.Org.objects.all():
 
+        # Tell previous user that they are going off call
+        try:
+            sch = models.Schedule.objects.get(org=org, order=org.week)
+            usr = sch.org_user
+        except models.Schedule.DoesNotExist:
+            logger.error('Could not find any users: %s' % org.name)
+            continue
+
+        logger.info('Sending notification to: %s' % usr.email_address)
+        if usr.notification_type == "email":
+            mail.send_going_oncall_email(usr.email_address)
+        else:
+            text.send_going_offcall(usr.phone_number)
+
+        # Increament the week
         new_week = org.week + 1
 
         if new_week > models.OrgUser.objects.filter(
             org=org, is_oncall=True, active=True
         ).count():
-
             new_week = 1
 
         org.week = new_week
         org.save()
 
+        # Tell new user that they are going on call.
         try:
             sch = models.Schedule.objects.get(org=org, order=new_week)
             usr = sch.org_user
@@ -46,11 +61,7 @@ def reschedule():
         if usr.notification_type == "email":
             mail.send_going_oncall_email(usr.email_address)
         else:
-            text.sent_text_message(
-                usr.phone_number,
-                "Just letting you know that you are going on call "
-                "for the next 7 days"
-            )
+            text.send_going_oncall(usr.phone_number)
 
 
 if __name__ == '__main__':

@@ -12,7 +12,7 @@ from api.views.failure import FailureViewSet, failure_count
 from api.views.ping_header import PingHeaderViewSet
 from api.views.org_user import (
     OrgUserViewSet, send_invite, check_invite, finish_invite, resend_invite,
-    update_user_order
+    update_user_order, send_notification_update
 )
 from api.views.org import OrgViewSet
 from api.views.auth import (
@@ -68,6 +68,11 @@ urlpatterns = [
         'org_user/update_user_order',
         update_user_order,
         name="update-user-order"
+    ),
+    path(
+        'org_user/send_notification_update',
+        send_notification_update,
+        name='send_notification_update'
     ),
 
     # Pings

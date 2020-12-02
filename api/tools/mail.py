@@ -84,3 +84,15 @@ def send_going_oncall_email(to_email):
             'title': 'onErrorLog: You are going on call'
         }
     )
+
+
+def send_going_offcall_email(to_email):
+
+    send_html_mail(
+        to_email,
+        'onErrorLog: You are going off call',
+        'going_offcall.html',
+        {
+            'title': 'onErrorLog: You are going off call'
+        }
+    )
