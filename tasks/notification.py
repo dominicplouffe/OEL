@@ -58,7 +58,7 @@ def notification_check(
                 else:
                     ping.notified_on = datetime.utcnow()
 
-                    send_ping_failure(
+                    text.send_ping_failure(
                         org_user.phone_number, ping.name, ping.doc_link
                     )
             else:
