@@ -48,3 +48,16 @@ def send_ping_failure(phone_number, ping_name, doc_link):
         phone_number,
         body
     )
+
+
+def send_pong_failure(phone_number, ping_name, doc_link):
+
+    body = "OnErrorLog Failure : %s - We received a notification.  One of your Pongs seems to be down.  Please login to onErrorLog and check it out." % ping_name
+
+    if doc_link and doc_link.startswith('http'):
+        body += " - Documentation: %s" % doc_link
+
+    sent_text_message(
+        phone_number,
+        body
+    )

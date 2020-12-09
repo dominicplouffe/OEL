@@ -90,7 +90,11 @@ class Ping(models.Model):
     org = models.ForeignKey(Org, on_delete=models.CASCADE, null=False)
     name = models.CharField(max_length=30, null=False, blank=False)
     doc_link = models.CharField(max_length=255, null=True, blank=True)
-    direction = models.CharField(max_length=10, default='pull')
+    direction = models.CharField(
+        max_length=10,
+        default='pull',
+        choices=DIRECTION
+    )
 
     notification_type = models.CharField(
         max_length=20,
@@ -114,23 +118,24 @@ class Ping(models.Model):
     updated_on = models.DateTimeField(auto_now=True)
 
     # Ping Settings
-    endpoint = models.CharField(max_length=255, null=True, blank=False)
+    endpoint = models.CharField(max_length=255, null=True, blank=True)
     endpoint_username = models.CharField(max_length=255, null=True, blank=True)
     endpoint_password = models.CharField(max_length=255, null=True, blank=True)
-    interval = models.IntegerField(null=True, blank=False)
+    interval = models.IntegerField(null=True, blank=True)
 
     task = models.ForeignKey(
         PeriodicTask,
         null=True,
+        blank=True,
         on_delete=models.CASCADE
     )
 
     # Expected Results for Ping
-    status_code = models.IntegerField(null=True, blank=False)
+    status_code = models.IntegerField(null=True, blank=True)
     content_type = models.CharField(
         max_length=20,
         null=True,
-        blank=False,
+        blank=True,
         choices=CONTENT_TYPE
     )
     expected_string = models.CharField(max_length=1000, null=True, blank=True)
