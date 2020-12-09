@@ -6,7 +6,7 @@ from api.views.ping import (
     PingViewSet, ping_test, ping_summary, ping_details, ping_now
 )
 from api.views.pong import (
-    pongme
+    pongme, PongViewSet
 )
 from api.views.failure import FailureViewSet, failure_count
 from api.views.ping_header import PingHeaderViewSet
@@ -23,6 +23,7 @@ from api.views import dashboard
 
 router = DefaultRouter()
 router.register(r'ping', PingViewSet, basename='ping')
+router.register(r'pong', PongViewSet, basename='pong')
 router.register(r'org_user', OrgUserViewSet, basename='org_user')
 router.register(r'failure', FailureViewSet, basename='failure')
 router.register(r'ping_header', PingHeaderViewSet, basename='ping_header')

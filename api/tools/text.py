@@ -33,15 +33,13 @@ def send_ping_success(phone_number, ping_name):
 
     sent_text_message(
         phone_number,
-        "OnErrorLog Success : %s - Your ping has been recovered, "
-        "everything is back to normal." % ping_name
+        "OnErrorLog Success : %s - Your ping has been recovered, everything is back to normal." % ping_name
     )
 
 
 def send_ping_failure(phone_number, ping_name, doc_link):
 
-    body = "OnErrorLog Failure : %s - We could not ping your enpoint.  "
-    "Please login to onErrorLog and check it out." % ping_name
+    body = "OnErrorLog Failure : %s - We could not ping your enpoint.  Please login to onErrorLog and check it out." % ping_name
 
     if doc_link and doc_link.startswith('http'):
         body += " - Documentation: %s" % doc_link

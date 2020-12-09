@@ -15,6 +15,8 @@ from api.models import Ping
 from api.tools import cache
 from oel.settings import SECS_BETWEEN_PONGS, PONG_DATA_MAX_LEN
 
+from api.serializers import PingSerializer
+
 
 class PongKeyPermission(BasePermission):
     def has_permission(self, request, view):
@@ -24,53 +26,92 @@ class PongKeyPermission(BasePermission):
             return False
 
         try:
-            ping = Ping.objects.get(pong_key=xauth)
+            ping = Ping.objects.get(push_key=xauth)
         except Ping.DoesNotExist:
             return False
 
         return True
 
 
+class PongPermission(BasePermission):
+
+    def has_object_permission(self, request, view, object):
+        if request.user.is_superuser:
+            return True
+
+        if object.org.id == request.org.id:
+            return True
+
+        return False
+
+
+class PongViewSet(AuthenticatedViewSet):
+    serializer_class = PingSerializer
+    filter_backends = [filters.SearchFilter,
+                       DjangoFilterBackend, filters.OrderingFilter]
+    permission_classes = [PongPermission]
+
+    model = Ping
+    filterset_fields = []
+    ordering_fields = ['created_on', 'updated_on']
+
+    def create(self, request, *args, **kwargs):
+
+        ping_data = request.data
+        ping_data['org'] = request.org.id
+
+        return super().create(request, *args, **kwargs)
+
+    # def update(self, request, *args, **kwargs):
+    #     ping_data = request.data
+
+    #     ping_data['org'] = request.org.id
+
+    #     return
+
+
 @api_view(['POST'])
 @permission_classes([PongKeyPermission])
 def pongme(request, *args, **kwargs):
 
-    xauth = request.headers['X-Auth']
+    # xauth = request.headers['X-Auth']
 
-    cache_key = 'xauth-req-%s' % xauth
-    if cache.get(cache_key):
-        return Response(
-            {
-                'details': 'Too many requests'
-            },
-            status=status.HTTP_429_TOO_MANY_REQUESTS
-        )
+    # cache_key = 'xauth-req-%s' % xauth
+    # if cache.get(cache_key):
+    #     return Response(
+    #         {
+    #             'details': 'Too many requests'
+    #         },
+    #         status=status.HTTP_429_TOO_MANY_REQUESTS
+    #     )
 
-    cache.set(cache_key, 1, expire=SECS_BETWEEN_PONGS)
-    body = request.body.decode('utf-8', errors="ignore")
+    # cache.set(cache_key, 1, expire=SECS_BETWEEN_PONGS)
+    # body = request.body.decode('utf-8', errors="ignore")
 
-    if len(body) > PONG_DATA_MAX_LEN:
-        return Response(
-            {
-                'details': 'Data too big.  Max length is: %s' % PONG_DATA_MAX_LEN
-            },
-            status=status.HTTP_400_BAD_REQUEST
-        )
+    # if len(body) > PONG_DATA_MAX_LEN:
+    #     return Response(
+    #         {
+    #             'details': 'Data too big.  Max length is: %s' % PONG_DATA_MAX_LEN
+    #         },
+    #         status=status.HTTP_400_BAD_REQUEST
+    #     )
 
-    data = None
-    if body:
-        try:
-            data = json.loads(body)
-        except json.JSONDecodeError:
-            return Response(
-                {
-                    'details': 'Data must be valid JSON.  '
-                    'Use https://jsonlint.com/ to validate your JSON.',
-                    'data_received': body
-                },
-                status=status.HTTP_400_BAD_REQUEST
-            )
+    # data = None
+    # if body:
+    #     try:
+    #         data = json.loads(body)
+    #     except json.JSONDecodeError:
+    #         return Response(
+    #             {
+    #                 'details': 'Data must be valid JSON.  '
+    #                 'Use https://jsonlint.com/ to validate your JSON.',
+    #                 'data_received': body
+    #             },
+    #             status=status.HTTP_400_BAD_REQUEST
+    #         )
 
-    res = process_pong(xauth, data)
+    # res = process_pong(xauth, data)
+
+    res = {}
 
     return Response({'notification_sent': res}, status=status.HTTP_200_OK)
