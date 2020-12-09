@@ -7,7 +7,12 @@ from api.common import schedule
 
 
 def notification_check(
-    success, ping, result_day, fail_res, response_time, org_user
+    success,
+    ping,
+    result_day,
+    fail_res,
+    response_time,
+    org_user
 ):
 
     notification_sent = False
@@ -16,7 +21,6 @@ def notification_check(
         if ping.failure_count > 0:
             ping.failure_count = 0
             if ping.notification_type == "team":
-
                 if org_user.notification_type == "email":
                     ping.notified_on = datetime.utcnow()
                     mail.send_html_mail(
@@ -46,10 +50,15 @@ def notification_check(
                 if org_user.notification_type == "email":
                     ping.notified_on = datetime.utcnow()
 
+                    template_name = "ping_failure.html"
+
+                    if ping.direction == "push":
+                        template_name = "pong_failure.html"
+
                     mail.send_html_mail(
                         org_user.email_address,
                         "OnErrorLog Failure : %s " % ping.name,
-                        "ping_failure.html",
+                        template_name,
                         {
                             'title': "OnErrorLog Failure : %s " % ping.name,
                             'doc_link': ping.doc_link
@@ -58,9 +67,14 @@ def notification_check(
                 else:
                     ping.notified_on = datetime.utcnow()
 
-                    text.send_ping_failure(
-                        org_user.phone_number, ping.name, ping.doc_link
-                    )
+                    if ping.direction == "pull":
+                        text.send_ping_failure(
+                            org_user.phone_number, ping.name, ping.doc_link
+                        )
+                    else:
+                        text.send_pong_failure(
+                            org_user.phone_number, ping.name, ping.doc_link
+                        )
             else:
                 send_callback(ping, fail_res, response_time, 'failure')
 

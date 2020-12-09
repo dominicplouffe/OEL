@@ -2,7 +2,7 @@ import json
 from api.models import Ping, Result
 from rest_framework import filters
 from api.base import AuthenticatedViewSet
-from rest_framework.permissions import BasePermission
+from rest_framework.permissions import BasePermission, AllowAny
 from rest_framework.permissions import AllowAny
 from rest_framework.serializers import ModelSerializer
 from django_filters.rest_framework import DjangoFilterBackend
@@ -70,22 +70,21 @@ class PongViewSet(AuthenticatedViewSet):
     #     return
 
 
-@api_view(['POST'])
-@permission_classes([PongKeyPermission])
-def pongme(request, *args, **kwargs):
+@api_view(['POST', 'GET'])
+@permission_classes([AllowAny])
+def pongme(request, push_key):
 
-    # xauth = request.headers['X-Auth']
+    cache_key = 'xauth-req-%s' % push_key
+    if cache.get(cache_key):
+        return Response(
+            {
+                'details': 'Too many requests'
+            },
+            status=status.HTTP_429_TOO_MANY_REQUESTS
+        )
 
-    # cache_key = 'xauth-req-%s' % xauth
-    # if cache.get(cache_key):
-    #     return Response(
-    #         {
-    #             'details': 'Too many requests'
-    #         },
-    #         status=status.HTTP_429_TOO_MANY_REQUESTS
-    #     )
+    cache.set(cache_key, 1, expire=SECS_BETWEEN_PONGS)
 
-    # cache.set(cache_key, 1, expire=SECS_BETWEEN_PONGS)
     # body = request.body.decode('utf-8', errors="ignore")
 
     # if len(body) > PONG_DATA_MAX_LEN:
@@ -110,8 +109,6 @@ def pongme(request, *args, **kwargs):
     #             status=status.HTTP_400_BAD_REQUEST
     #         )
 
-    # res = process_pong(xauth, data)
-
-    res = {}
+    res = process_pong(push_key)
 
     return Response({'notification_sent': res}, status=status.HTTP_200_OK)

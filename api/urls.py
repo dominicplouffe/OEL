@@ -84,7 +84,7 @@ urlpatterns = [
     path('ping/now/<int:id>/', ping_now, name='ping-now'),
 
     # Pongs
-    path('pongmae/', pongme, name='pong-me'),
+    path('pongme/<push_key>', pongme, name='pong-me'),
 
     # Failures and Incicents
     path('failure/counts/<int:ping_id>/', failure_count, name='failure-count'),

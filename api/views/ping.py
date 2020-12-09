@@ -121,9 +121,11 @@ def ping_summary(request, *args, **kwargs):
     org = request.org
 
     if 'id' in kwargs:
-        pings = Ping.objects.filter(org=org, id=kwargs['id'])
+        pings = Ping.objects.filter(org=org, id=kwargs['id'], direction='pull')
     else:
-        pings = Ping.objects.filter(org=org).order_by('created_on')
+        pings = Ping.objects.filter(
+            org=org, direction='pull'
+        ).order_by('created_on')
 
     data = {
         'total': len(pings),
@@ -139,6 +141,7 @@ def ping_summary(request, *args, **kwargs):
     ago = now - timedelta(hours=24)
 
     for ping in pings:
+        print(ping.id)
         pd = {
             'status': True,
             'count': 0,
