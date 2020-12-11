@@ -52,7 +52,7 @@ def get_fail_stats(ping, hours):
                 f.recovered_on - f.created_on
             ).total_seconds()
             stats['total_fails'] += 1
-            stats['recovered'] += 1
+            stats['resolved'] += 1
         elif f.fixed_on is not None:
             stats['total_time'] += (f.fixed_on - f.created_on).total_seconds()
             stats['total_fails'] += 1
