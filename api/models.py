@@ -233,8 +233,34 @@ class Failure(models.Model):
         on_delete=models.CASCADE,
         null=True
     )
-    content = models.CharField(max_length=10000, null=True, blank=True)
+    content = models.CharField(
+        max_length=10000, null=True, blank=True)
     created_on = models.DateTimeField(default=datetime.now)
+    acknowledged_on = models.DateTimeField(null=True, blank=True)
+    acknowledged_by = models.ForeignKey(
+        OrgUser,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name='acknowledged_by'
+    )
+    fixed_on = models.DateTimeField(null=True, blank=True)
+    fixed_by = models.ForeignKey(
+        OrgUser,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name='fixed_by'
+    )
+    ignored_on = models.DateTimeField(null=True, blank=True)
+    ignored_by = models.ForeignKey(
+        OrgUser,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name='ignored_by'
+    )
+    recovered_on = models.DateTimeField(null=True, blank=True)
 
 
 class PongData(models.Model):

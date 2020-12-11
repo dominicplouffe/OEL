@@ -2,6 +2,7 @@ from api import models
 from datetime import datetime
 from api.common import schedule
 from tasks.notification import notification_check
+from tasks.ping import insert_failure
 
 
 def process_pong(push_key):
@@ -72,6 +73,8 @@ def process_pong(push_key):
 
     success = False
     oncall_user = schedule.get_on_call_user(pong.org)
+
+    insert_failure(pong, "Receive Alert", 500, "", oncall_user)
 
     return notification_check(
         success,

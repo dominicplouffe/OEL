@@ -3,7 +3,7 @@ import requests
 from api.tools import mail, text
 from api import models
 from datetime import datetime
-from api.common import schedule
+from api.common import schedule, failure
 
 
 def notification_check(
@@ -20,6 +20,7 @@ def notification_check(
     if success:
         if ping.failure_count > 0:
             ping.failure_count = 0
+
             if ping.notification_type == "team":
                 if org_user.notification_type == "email":
                     ping.notified_on = datetime.utcnow()
@@ -36,6 +37,8 @@ def notification_check(
                     text.send_ping_success(org_user.phone_number, ping.name)
             else:
                 send_callback(ping, fail_res, response_time, 'success')
+
+            failure.recover_failure(ping)
 
     else:
         ping.failure_count += 1
