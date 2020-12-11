@@ -59,15 +59,16 @@ class PongViewSet(AuthenticatedViewSet):
 
         ping_data = request.data
         ping_data['org'] = request.org.id
+        ping_data['direction'] = 'push'
 
         return super().create(request, *args, **kwargs)
 
-    # def update(self, request, *args, **kwargs):
-    #     ping_data = request.data
+    def update(self, request, *args, **kwargs):
+        ping_data = request.data
+        ping_data['org'] = request.org.id
+        ping_data['direction'] = 'push'
 
-    #     ping_data['org'] = request.org.id
-
-    #     return
+        return super().update(request, *args, **kwargs)
 
 
 @api_view(['POST', 'GET'])

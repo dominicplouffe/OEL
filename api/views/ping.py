@@ -1,6 +1,7 @@
-from api.models import Ping, Result
+from api.models import Ping, Result, Failure
 from rest_framework import filters
 from api.base import AuthenticatedViewSet
+from api.common import failure
 from rest_framework.permissions import BasePermission
 from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
@@ -11,7 +12,7 @@ from tasks.ping import process_ping, insert_failure
 from django_celery_beat.models import PeriodicTask, IntervalSchedule
 from datetime import datetime, timedelta
 
-from api.serializers import PingSerializer
+from api.serializers import PingSerializer, FailureSerializer
 
 
 class PingPermission(BasePermission):
@@ -119,12 +120,18 @@ class PingViewSet(AuthenticatedViewSet):
 def ping_summary(request, *args, **kwargs):
 
     org = request.org
+    direction = request.GET.get('direction', 'pull')
+    hours = int(request.GET.get('hours', 24))
 
     if 'id' in kwargs:
-        pings = Ping.objects.filter(org=org, id=kwargs['id'], direction='pull')
+        pings = Ping.objects.filter(
+            org=org,
+            id=kwargs['id'],
+            direction=direction
+        )
     else:
         pings = Ping.objects.filter(
-            org=org, direction='pull'
+            org=org, direction=direction
         ).order_by('created_on')
 
     data = {
@@ -138,10 +145,9 @@ def ping_summary(request, *args, **kwargs):
 
     now = datetime.utcnow()
     now = datetime(now.year, now.month, now.day, now.hour)
-    ago = now - timedelta(hours=24)
+    ago = now - timedelta(hours=hours)
 
     for ping in pings:
-        print(ping.id)
         pd = {
             'status': True,
             'count': 0,
@@ -186,13 +192,27 @@ def ping_summary(request, *args, **kwargs):
 
         for res in results:
 
+            pd['downtime'] = 0
+            pd['avg_resp'] = 0
+            pd['total_time'] = 0
+            pd['availability'] = 0
+
             pd['count'] += res.count
             pd['success'] += res.success
             pd['failure'] += res.failure
-            pd['downtime'] += ping.interval * res.failure * 60
-            pd['total_time'] += res.total_time
-            pd['avg_resp'] = pd['total_time'] / pd['count']
-            pd['availability'] = round(100 * pd['success'] / pd['count'], 2)
+
+            if ping.direction == 'pull':
+                pd['downtime'] += ping.interval * res.failure * 60
+                pd['total_time'] += res.total_time
+                pd['avg_resp'] = pd['total_time'] / pd['count']
+                pd['availability'] = round(
+                    100*pd['success'] / pd['count'],
+                    2
+                )
+
+            pd['stats'] = failure.get_fail_stats(ping, hours)
+
+            print(pd['stats'])
 
             downtime_hours = int(pd['downtime'] / 60 / 60)
             downtime_minutes = int((
@@ -227,6 +247,11 @@ def ping_summary(request, *args, **kwargs):
         ]
 
         pd['ping'] = PingSerializer(ping).data
+        if not pd['status']:
+            fail = failure.get_current_failure(ping)
+            if fail:
+                pd['fail'] = FailureSerializer(fail).data
+
         ping_data.append(pd)
 
     ping_data = sorted(ping_data, key=lambda x: -x['ping']['active'])
@@ -357,5 +382,77 @@ def ping_now(request, id):
             'ping_reason': ping_res,
             'reason': reason
         },
+        status=status.HTTP_200_OK
+    )
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def acknowledge(request, id):
+
+    try:
+        fail = Failure.objects.get(pk=id)
+    except Failure.DoesNotExist:
+        return Response(
+            {},
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+    fail.acknowledged_on = datetime.utcnow()
+    fail.acknowledged_by = request.org_user
+    fail.save()
+
+    return Response(
+        {},
+        status=status.HTTP_200_OK
+    )
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def fix(request, id):
+
+    try:
+        fail = Failure.objects.get(pk=id)
+    except Failure.DoesNotExist:
+        return Response(
+            {},
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+    fail.fixed_on = datetime.utcnow()
+    fail.fixed_by = request.org_user
+
+    fail.ping.failure_count = 0
+    fail.save()
+    fail.ping.save()
+
+    return Response(
+        {},
+        status=status.HTTP_200_OK
+    )
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def ignore(request, id):
+
+    try:
+        fail = Failure.objects.get(pk=id)
+    except Failure.DoesNotExist:
+        return Response(
+            {},
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+    fail.ignored_on = datetime.utcnow()
+    fail.ignored_by = request.org_user
+
+    fail.ping.failure_count = 0
+    fail.save()
+    fail.ping.save()
+
+    return Response(
+        {},
         status=status.HTTP_200_OK
     )

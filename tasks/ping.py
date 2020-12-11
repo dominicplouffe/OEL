@@ -10,19 +10,34 @@ from datetime import datetime  # noqa
 from api import models  # noqa
 from tasks.notification import notification_check  # noqa
 from api.common import schedule  # noqa
+from api.common import failure as fail_svc  # noqa
 import json  # noqa
 
 
 def insert_failure(ping, reason, status_code, content, org_user):
 
-    fail = models.Failure(
-        ping=ping,
-        status_code=status_code,
-        reason=reason,
-        content=content[0:10000],
-        notify_org_user=org_user
-    )
-    fail.save()
+    create_fail = False
+    fail = fail_svc.get_current_failure(ping)
+
+    if not fail:
+        create_fail = True
+    else:
+        if fail.ignored_on is not None:
+            create_fail = True
+        if fail.fixed_on is not None:
+            create_fail = True
+        if fail.recovered_on is not None:
+            create_fail = True
+
+    if create_fail:
+        fail = models.Failure(
+            ping=ping,
+            status_code=status_code,
+            reason=reason,
+            content=content[0:10000],
+            notify_org_user=org_user
+        )
+        fail.save()
 
     return fail
 
