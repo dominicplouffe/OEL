@@ -1,3 +1,4 @@
+import pytz
 from api import models
 from django.db.models import Q
 from datetime import datetime, timedelta
@@ -31,7 +32,7 @@ def recover_failure(ping):
 
 def get_fail_stats(ping, hours):
 
-    now = datetime.utcnow()
+    now = datetime.now(pytz.UTC)
     ago = now - timedelta(hours=hours)
 
     fails = models.Failure.objects.filter(created_on__gte=ago, ping=ping)

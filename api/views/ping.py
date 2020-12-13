@@ -1,3 +1,4 @@
+import pytz
 from api.models import Ping, Result, Failure
 from rest_framework import filters
 from api.base import AuthenticatedViewSet
@@ -143,7 +144,7 @@ def ping_summary(request, *args, **kwargs):
     }
     ping_data = []
 
-    now = datetime.utcnow()
+    now = datetime.now(pytz.UTC)
     now = datetime(now.year, now.month, now.day, now.hour)
     ago = now - timedelta(hours=hours)
 
@@ -190,13 +191,12 @@ def ping_summary(request, *args, **kwargs):
             result_date__gte=ago
         ).order_by('result_date')
 
+        pd['downtime'] = 0
+        pd['avg_resp'] = 0
+        pd['total_time'] = 0
+        pd['availability'] = 0
+
         for res in results:
-
-            pd['downtime'] = 0
-            pd['avg_resp'] = 0
-            pd['total_time'] = 0
-            pd['availability'] = 0
-
             pd['count'] += res.count
             pd['success'] += res.success
             pd['failure'] += res.failure
@@ -211,8 +211,6 @@ def ping_summary(request, *args, **kwargs):
                 )
 
             pd['stats'] = failure.get_fail_stats(ping, hours)
-
-            print(pd['stats'])
 
             downtime_hours = int(pd['downtime'] / 60 / 60)
             downtime_minutes = int((
