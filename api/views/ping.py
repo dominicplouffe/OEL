@@ -149,7 +149,6 @@ def ping_summary(request, *args, **kwargs):
     ago = now - timedelta(hours=hours)
 
     for ping in pings:
-        break
         pd = {
             'status': True,
             'count': 0,
