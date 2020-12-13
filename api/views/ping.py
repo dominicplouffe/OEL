@@ -149,6 +149,7 @@ def ping_summary(request, *args, **kwargs):
     ago = now - timedelta(hours=hours)
 
     for ping in pings:
+        break
         pd = {
             'status': True,
             'count': 0,
@@ -338,12 +339,21 @@ def ping_details(request, id):
         d = datetime(d.year, d.month, d.day)
         status = 'success'
         status_text = 'Everything looks great today'
-        if res.success / res.count < 0.90:
-            status = 'danger'
-            status_text = 'Many pings failed on this day'
-        elif res.failure > 1:
-            status = 'warning'
-            status_text = 'At least one failure on this day'
+
+        if ping.direction == 'pull':
+            if res.success / res.count < 0.90:
+                status = 'danger'
+                status_text = 'Many pings failed on this day'
+            elif res.failure > 1:
+                status = 'warning'
+                status_text = 'At least one failure on this day'
+        else:
+            if res.count >= 5:
+                status = 'danger'
+                status_text = 'Many pongs were triggered on this day'
+            elif res.count >= 1:
+                status = 'warning'
+                status_text = 'One or more pongs where triggered on this day'
 
         calendar_data[d]['status'] = status
         calendar_data[d]['text'] = status_text
