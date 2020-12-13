@@ -214,7 +214,8 @@ class Failure(models.Model):
         ('status_code', 'Status Code'),
         ('connection_error', 'Connection Error'),
         ('timeout_error', 'Timeout Error'),
-        ('http_error', 'HTTP Error')
+        ('http_error', 'HTTP Error'),
+        ('receive_alert', 'Receive Alert')
     )
     ping = models.ForeignKey(
         Ping,
