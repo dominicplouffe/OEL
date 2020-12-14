@@ -35,7 +35,7 @@ class PingViewSet(AuthenticatedViewSet):
     permission_classes = [PingPermission]
 
     model = Ping
-    filterset_fields = []
+    filterset_fields = ['direction']
     ordering_fields = ['created_on', 'updated_on']
 
     def get_queryset(self, *args, **kwargs):
