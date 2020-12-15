@@ -54,8 +54,9 @@ def failure_count(request, ping_id):
     total = 0
 
     for f in failures:
-        counts[reasons[f.reason]] += 1
-        total += 1
+        if f.reason and f.reason in reasons:
+            counts[reasons[f.reason]] += 1
+            total += 1
 
     results = []
     for r, c in counts.items():
