@@ -128,5 +128,6 @@ def keepalive(_, push_key):
         )
 
     cache.set(cache_key, 1, expire=SECS_BETWEEN_PONGS)
-    process_pong(push_key, heartbeat=True)
+    res = process_pong(push_key, heartbeat=True)
 
+    return Response({'heartbeat_received': res}, status=status.HTTP_200_OK)
