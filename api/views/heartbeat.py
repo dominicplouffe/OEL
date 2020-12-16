@@ -53,7 +53,7 @@ class HeartBeatViewSet(AuthenticatedViewSet):
             name=ping_data['name'],
             task='tasks.ping.deadmanswitch',
             interval=task_interval,
-            one_off=ping_data['one_off']
+            one_off=True
         )
         task.save()
         ping_data['task'] = task.id
@@ -98,7 +98,7 @@ class HeartBeatViewSet(AuthenticatedViewSet):
             every=ping_data['interval']
         )
         ping.task.enabled = ping_data['active']
-        ping.task.one_off = ping_data['one_off']
+        ping.task.one_off = True
         ping.task.interval = task_interval
 
         for attr, value in ping_data.items():
