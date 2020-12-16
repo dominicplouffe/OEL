@@ -149,3 +149,6 @@ local-up.sh
 local-down.sh
 
 .pylintrc
+
+# local db
+sqlite3.db

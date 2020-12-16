@@ -175,7 +175,7 @@ def signup_code_complete(request):
         phone_number_verified_on=datetime.utcnow(),
         active=True,
         is_oncall=True,
-        color=colors.pick_color(request.org)
+        color=colors.pick_color(org)
     )
     org_user.save()
 

@@ -5,11 +5,17 @@ from tasks.notification import notification_check
 from tasks.ping import insert_failure
 
 
-def process_pong(push_key):
+def process_pong(push_key, heartbeat=False):
+
+    if heartbeat:
+        direction = "both"
+    else:
+        direction = "push"
 
     pong = models.Ping.objects.filter(
         push_key=push_key,
-        active=True
+        active=True,
+        direction=direction
     ).first()
 
     if not pong:
@@ -46,7 +52,11 @@ def process_pong(push_key):
         )
 
     result_hour.count += 1
-    result_hour.failure += 1
+    if heartbeat:
+        result_hour.success += 1
+    else:
+        result_hour.failure += 1
+
     result_hour.save()
 
     # Increment Result Day
@@ -68,19 +78,26 @@ def process_pong(push_key):
         )
 
     result_day.count += 1
-    result_day.failure += 1
+    if heartbeat:
+        result_day.success += 1
+    else:
+        result_day.failure += 1
+
     result_day.save()
 
-    success = False
-    oncall_user = schedule.get_on_call_user(pong.org)
+    if not heartbeat:
+        success = False
+        oncall_user = schedule.get_on_call_user(pong.org)
 
-    insert_failure(pong, "receive_alert", 500, "", oncall_user)
+        insert_failure(pong, "receive_alert", 500, "", oncall_user)
 
-    return notification_check(
-        success,
-        pong,
-        result_day,
-        'Pong Received',
-        0,
-        oncall_user
-    )
+        return notification_check(
+            success,
+            pong,
+            result_day,
+            'Pong Received',
+            0,
+            oncall_user
+        )
+
+    return True

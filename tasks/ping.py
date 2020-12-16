@@ -6,7 +6,7 @@ django.setup()
 
 import requests  # noqa
 from oel.celery import app  # noqa
-from datetime import datetime  # noqa
+from datetime import datetime, timedelta  # noqa
 from api import models  # noqa
 from tasks.notification import notification_check  # noqa
 from api.common import schedule  # noqa
@@ -40,6 +40,84 @@ def insert_failure(ping, reason, status_code, content, org_user):
         fail.save()
 
     return fail
+
+
+@app.task
+def deadmanswitch(heartbeat_id):
+
+    heartbeat = models.Ping.objects.filter(
+        pk=heartbeat_id,
+        active=True
+    ).first()
+
+    if not heartbeat:
+        return None, None
+
+    now = datetime.utcnow()
+    window = now - timedelta(hours=heartbeat.interval)
+
+    result = models.Result.objects.filter(
+        ping=heartbeat,
+        result_type='hour',
+        updated_on__gt=window
+    ).first()
+
+    if result is None:
+        hour_date = datetime(
+            now.year, now.month, now.day,
+            now.hour, 0, 0
+        )
+        result_hour = models.Result(
+            ping=heartbeat,
+            result_type='hour',
+            result_date=hour_date,
+            count=0,
+            success=0,
+            failure=0,
+            total_time=0
+        )
+        result_hour.count += 1
+        result_hour.failure += 1
+        result_hour.save()
+
+        # Increment Result Day
+        day_date = datetime(
+            now.year, now.month, now.day
+        )
+        result_day = models.Result.objects.filter(
+            ping=heartbeat,
+            result_type='day',
+            result_date=day_date
+        ).first()
+
+        if result_day is None:
+            result_day = models.Result(
+                ping=heartbeat,
+                result_type='day',
+                result_date=day_date,
+                count=0,
+                success=0,
+                failure=0,
+                total_time=0
+            )
+
+        result_day.count += 1
+        result_day.failure += 1
+        result_day.save()
+
+        success = False
+        oncall_user = schedule.get_on_call_user(heartbeat.org)
+
+        insert_failure(heartbeat, "receive_alert", 500, "", oncall_user)
+
+        return notification_check(
+            success,
+            heartbeat,
+            result_day,
+            'Heartbeat Not Received',
+            0,
+            oncall_user
+        )
 
 
 @app.task

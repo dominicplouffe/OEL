@@ -84,7 +84,8 @@ class Ping(models.Model):
 
     DIRECTION = (
         ('push', 'Push'),
-        ('pull', 'Pull')
+        ('pull', 'Pull'),
+        ('both', 'Both')
     )
 
     org = models.ForeignKey(Org, on_delete=models.CASCADE, null=False)

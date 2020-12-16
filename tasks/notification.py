@@ -58,6 +58,9 @@ def notification_check(
                     if ping.direction == "push":
                         template_name = "pong_failure.html"
 
+                    if ping.direction == "both":
+                        template_name = "heartbeat_failure.html"
+
                     mail.send_html_mail(
                         org_user.email_address,
                         "OnErrorLog Failure : %s " % ping.name,
