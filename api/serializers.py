@@ -12,6 +12,13 @@ class OrgSerializer(ModelSerializer):
         fields = '__all__'
 
 
+class PingSerializer(ModelSerializer):
+
+    class Meta:
+        model = Ping
+        fields = '__all__'
+
+
 class OrgUserSerializer(ModelSerializer):
 
     org = OrgSerializer(read_only=True)
@@ -34,6 +41,10 @@ class OrgUserSerializer(ModelSerializer):
 class FailureSerializer(ModelSerializer):
 
     notify_org_user = OrgUserSerializer(read_only=True)
+    ping = PingSerializer(read_only=True)
+    acknowledged_by = OrgUserSerializer(read_only=True)
+    fixed_by = OrgUserSerializer(read_only=True)
+    ignored_by = OrgUserSerializer(read_only=True)
 
     class Meta:
         model = Failure
@@ -63,13 +74,6 @@ class ChangePasswordSerializer(ModelSerializer):
         user = self.context.get('user')
         validate_password(password, user)
         return password
-
-
-class PingSerializer(ModelSerializer):
-
-    class Meta:
-        model = Ping
-        fields = '__all__'
 
 
 class ScheduleSerializer(ModelSerializer):

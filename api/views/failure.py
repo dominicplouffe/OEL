@@ -20,6 +20,10 @@ from api.serializers import FailureSerializer
 class FailurePermission(BasePermission):
 
     def has_object_permission(self, request, view, object):
+
+        if object.ping.org.id == request.org.id:
+            return True
+
         if request.user.is_superuser:
             return True
 

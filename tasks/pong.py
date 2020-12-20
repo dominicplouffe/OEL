@@ -74,13 +74,13 @@ def process_pong(push_key):
     success = False
     oncall_user = schedule.get_on_call_user(pong.org)
 
-    insert_failure(pong, "receive_alert", 500, "", oncall_user)
+    fail_res = insert_failure(pong, "receive_alert", 500, "", oncall_user)
 
     return notification_check(
         success,
         pong,
         result_day,
-        'Pong Received',
+        fail_res,
         0,
         oncall_user
     )
