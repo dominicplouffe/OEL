@@ -25,13 +25,16 @@ COLORS = [
 
 def pick_color(org):
 
+    shuffle(COLORS)
+    color = COLORS[0]
+
+    if not org:
+        return color
+
     if OrgUser.objects.filter(org=org).count() == len(COLORS):
         return '#cccccc'
 
     while True:
-        shuffle(COLORS)
-
-        color = COLORS[0]
 
         try:
             OrgUser.objects.get(org=org, color=color)
