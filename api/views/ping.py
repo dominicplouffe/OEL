@@ -40,9 +40,6 @@ class PingViewSet(AuthenticatedViewSet):
 
     def get_queryset(self, *args, **kwargs):
 
-        if self.request.user.is_superuser:
-            return super().get_queryset(*args, **kwargs)
-
         return Ping.objects.filter(org=self.request.org).all()
 
     def create(self, request, *args, **kwargs):
