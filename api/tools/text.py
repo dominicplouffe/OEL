@@ -31,8 +31,8 @@ def send_going_oncall(phone_number):
 
 def send_ping_success(phone_number, ping_name):
 
-    body = "OnErrorLog Success : %s - Your ping has been recovered, "
-    body += "everything is back to normal." % ping_name
+    body = "OnErrorLog Success : %s - " % ping_name
+    body += "Your ping has been recovered, everything is back to normal."
     sent_text_message(
         phone_number,
         body
