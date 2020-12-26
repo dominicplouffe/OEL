@@ -21,6 +21,7 @@ from api.views.auth import (
     signup_code_complete, ChangePasswordView
 )
 from api.views import dashboard
+from api.views import metrics
 
 router = DefaultRouter()
 router.register(r'ping', PingViewSet, basename='ping')
@@ -86,6 +87,9 @@ urlpatterns = [
 
     # Pongs
     path('pongme/<push_key>', pongme, name='pong-me'),
+
+    # Metics
+    path('metrics/<api_key>', metrics.add_metrics, name="add-metrics"),
 
     # Confirmation
     path('ping/acknowledge/<int:id>/', acknowledge, name='acknowledge'),
