@@ -1,7 +1,9 @@
 from rest_framework.serializers import (
     ModelSerializer, ReadOnlyField,  SerializerMethodField
 )
-from api.models import (Org, OrgUser, Failure, PingHeader, Ping, Schedule)
+from api.models import (
+    Org, OrgUser, Failure, PingHeader, Ping, Schedule, VitalInstance
+)
 from django.contrib.auth.models import User
 
 
@@ -16,6 +18,21 @@ class PingSerializer(ModelSerializer):
 
     class Meta:
         model = Ping
+        fields = '__all__'
+
+
+class VitalInstanceSerializer(ModelSerializer):
+
+    cpu_percent = ReadOnlyField()
+    cpu_status = ReadOnlyField()
+    mem_percent = ReadOnlyField()
+    mem_status = ReadOnlyField()
+    disk_percent = ReadOnlyField()
+    disk_status = ReadOnlyField()
+    total_status = ReadOnlyField()
+
+    class Meta:
+        model = VitalInstance
         fields = '__all__'
 
 

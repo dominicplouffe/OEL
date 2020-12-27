@@ -2,7 +2,7 @@ from django.contrib import admin
 
 from .models import (
     Org, OrgUser, Ping, PingHeader,
-    Result, Failure, Schedule, Metric
+    Result, Failure, Schedule, Metric, VitalInstance
 )
 
 admin.site.register(Org)
@@ -13,3 +13,4 @@ admin.site.register(Result)
 admin.site.register(Failure)
 admin.site.register(Schedule)
 admin.site.register(Metric)
+admin.site.register(VitalInstance)
