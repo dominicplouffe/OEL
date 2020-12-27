@@ -57,6 +57,13 @@ def add_metrics(request, *args, **kwargs):
             status=status.HTTP_400_BAD_REQUEST
         )
 
+    if 'partition' in payload['tags']:
+        if payload['tags']['partition'] != '/':
+            return Response(
+                {},
+                status=status.HTTP_201_CREATED
+            )
+
     m = Metric(
         org=org,
         metrics=payload['metrics'],

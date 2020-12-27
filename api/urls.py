@@ -22,6 +22,7 @@ from api.views.auth import (
 )
 from api.views import dashboard
 from api.views import metrics
+from api.views.vital_instance import VitalInstancegViewSet
 
 router = DefaultRouter()
 router.register(r'ping', PingViewSet, basename='ping')
@@ -30,6 +31,11 @@ router.register(r'org_user', OrgUserViewSet, basename='org_user')
 router.register(r'failure', FailureViewSet, basename='failure')
 router.register(r'ping_header', PingHeaderViewSet, basename='ping_header')
 router.register(r'org', OrgViewSet, basename='org')
+router.register(
+    r'vital_instance',
+    VitalInstancegViewSet,
+    basename='vital_instance'
+)
 
 urlpatterns = [
     path(

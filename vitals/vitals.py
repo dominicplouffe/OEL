@@ -5,7 +5,7 @@ import psutil
 import socket
 import logging
 
-API_KEY = '06885002-7b72-4d4f-8906-2a4585c0a8a16'
+API_KEY = 'OEL_KEY'
 SERVER_URL = 'https://api.connexion.me/api/metrics/%s' % API_KEY
 
 logging.basicConfig(level=logging.INFO)

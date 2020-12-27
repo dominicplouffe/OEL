@@ -20,6 +20,7 @@ BUILD_DIRS = [
     'api',
     'tasks',
     'oel',
+    'tools',
     'manage.py',
     'requirements.txt',
 
@@ -61,6 +62,7 @@ def copy_code(ssh):
     ssh.exec_command('sudo cp -r oel /opt/oel')
     ssh.exec_command('sudo cp -r api /opt/oel')
     ssh.exec_command('sudo cp -r tasks /opt/oel')
+    ssh.exec_command('sudo cp -r tools /opt/oel')
     ssh.exec_command('sudo cp manage.py /opt/oel')
     ssh.exec_command('sudo cp requirements.txt /opt/oel')
     ssh.exec_command('PYTHONPATH=/opt/oel python3 /opt/oel/manage.py migrate')
