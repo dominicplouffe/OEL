@@ -317,3 +317,12 @@ class Metric(models.Model):
     metrics = models.JSONField()
     tags = models.JSONField()
     created_on = models.DateTimeField(default=datetime.now)
+
+
+class VitalInstance(models.Model):
+    org = models.ForeignKey(Org, on_delete=models.CASCADE, null=True)
+    instance_id = models.CharField(max_length=256, null=True, blank=True)
+    name = models.CharField(max_length=256, null=True, blank=True)
+    active = models.BooleanField(default=True)
+    created_on = models.DateTimeField(default=datetime.now)
+    updated_on = models.DateTimeField(auto_now=True)

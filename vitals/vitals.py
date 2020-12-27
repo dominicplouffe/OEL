@@ -1,6 +1,15 @@
 import time
+import json
+import requests
 import psutil
 import socket
+import logging
+
+API_KEY = '06885002-7b72-4d4f-8906-2a4585c0a8a16'
+SERVER_URL = 'https://api.connexion.me/api/metrics/%s' % API_KEY
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 def get_cpu_percent():
@@ -29,34 +38,52 @@ def get_disk_usage_percent():
     return partitions
 
 
-if __name__ == '__main__':
-
+def send_vitals():
     host_name = socket.gethostname()
 
     cpu_percent = get_cpu_percent()
-    print(cpu_percent)
-
     mem_used_percent = get_memory_used_percent()
-    print(mem_used_percent)
-
     disk_usage = get_disk_usage_percent()
-    print(disk_usage)
 
     payload_cpu = {
         'metrics': {'cpu': cpu_percent},
         'tags': {'identifier': host_name, 'category': 'cpu_percent'}
     }
-    print(payload_cpu)
+    res = requests.post(
+        SERVER_URL,
+        data=json.dumps(payload_cpu)
+    )
+    logging.info('cpu result: %s' % res.status_code)
 
     payload_mem = {
         'metrics': {'mem': mem_used_percent},
         'tags': {'identifier': host_name, 'category': 'memory_percent'}
     }
-    print(payload_mem)
+    requests.post(
+        SERVER_URL,
+        data=json.dumps(payload_mem)
+    )
+    logging.info('mem result: %s' % res.status_code)
 
     for p in disk_usage:
         payload_disk = {
             'metrics': {'disk': p['disk']},
-            'tags': {'identifier': host_name, 'category': 'disk_percent', 'partition': p['partition']}
+            'tags': {
+                'identifier': host_name,
+                'category': 'disk_percent',
+                'partition': p['partition']
+            }
         }
-        print(payload_disk)
+        requests.post(
+            SERVER_URL,
+            data=json.dumps(payload_disk)
+        )
+        logging.info('disk (%s) result: %s' % (
+            p['disk'],
+            res.status_code
+        ))
+
+
+if __name__ == '__main__':
+
+    send_vitals()
