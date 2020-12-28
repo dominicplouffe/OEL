@@ -7,6 +7,7 @@ from api.serializers import VitalInstanceSerializer
 from rest_framework import status
 from rest_framework.response import Response
 from api.common import vitals
+from api.common.metrics import graph
 from tools.color import GRADIENTS
 
 
@@ -33,32 +34,46 @@ class VitalInstancegViewSet(AuthenticatedViewSet):
         try:
             instance = VitalInstance.objects.get(pk=pk)
 
-            instance.cpu_percent = vitals.get_cpu_stats(
-                instance.instance_id,
+            instance = self.get_instance_details(
+                VitalInstanceSerializer(instance).data,
                 request.org
             )
-            instance.cpu_status = GRADIENTS[int(instance.cpu_percent * 100)]
-            instance.mem_percent = vitals.get_mem_stats(
-                instance.instance_id,
-                request.org
+
+            cpu_graph = graph.get_graph_data(
+                'cpu',
+                {
+                    'category': 'cpu_percent',
+                    'identifier': instance['instance_id']
+                },
+                request.org,
+                since=24
             )
-            instance.mem_status = GRADIENTS[int(instance.mem_percent * 100)]
-
-            instance.disk_percent = vitals.get_disk_stats(
-                instance.instance_id,
-                request.org
+            mem_graph = graph.get_graph_data(
+                'mem',
+                {
+                    'category': 'memory_percent',
+                    'identifier': instance['instance_id']
+                },
+                request.org,
+                since=24
             )
-            instance.disk_status = GRADIENTS[int(instance.disk_percent * 100)]
+            disk_graph = graph.get_graph_data(
+                'disk',
+                {
+                    'category': 'disk_percent',
+                    'partition': '/',
+                    'identifier': instance['instance_id']
+                },
+                request.org,
+                since=24
+            )
 
-            total = (instance.cpu_percent +
-                     instance.mem_percent +
-                     instance.disk_percent
-                     ) / 3
-
-            instance.total_status = GRADIENTS[int(total * 100)]
+            instance['cpu_graph'] = cpu_graph
+            instance['mem_graph'] = mem_graph
+            instance['disk_graph'] = disk_graph
 
             return Response(
-                VitalInstanceSerializer(instance).data,
+                instance,
                 status=status.HTTP_200_OK
             )
         except VitalInstance.DoesNotExist:
@@ -67,6 +82,50 @@ class VitalInstancegViewSet(AuthenticatedViewSet):
                 status=status.HTTP_404_NOT_FOUND
             )
 
+    def list(self, request, *args, **kwargs):
+
+        response = super().list(request, *args, **kwargs)
+
+        for i, instance in enumerate(response.data['results']):
+
+            response.data['results'][i] = self.get_instance_details(
+                response.data['results'][i],
+                request.org
+            )
+
+        return response
+
     def get_queryset(self, *args, **kwargs):
 
-        return VitalInstance.objects.filter(org=self.request.org).all()
+        instances = VitalInstance.objects.filter(org=self.request.org).all()
+
+        return instances
+
+    def get_instance_details(self, instance, org):
+        instance['cpu_percent'] = vitals.get_cpu_stats(
+            instance['instance_id'],
+            org
+        )
+        instance['cpu_status'] = GRADIENTS[int(instance['cpu_percent'] * 100)]
+        instance['mem_percent'] = vitals.get_mem_stats(
+            instance['instance_id'],
+            org
+        )
+        instance['mem_status'] = GRADIENTS[int(
+            instance['mem_percent'] * 100)]
+
+        instance['disk_percent'] = vitals.get_disk_stats(
+            instance['instance_id'],
+            org
+        )
+        instance['disk_status'] = GRADIENTS[int(
+            instance['disk_percent'] * 100)]
+
+        total = (instance['cpu_percent'] +
+                 instance['mem_percent'] +
+                 instance['disk_percent']
+                 ) / 3
+
+        instance['total_status'] = GRADIENTS[int(total * 100)]
+
+        return instance
