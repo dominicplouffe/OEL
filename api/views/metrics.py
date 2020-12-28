@@ -64,6 +64,9 @@ def add_metrics(request, *args, **kwargs):
                 status=status.HTTP_201_CREATED
             )
 
+    if 'cpu' in payload['metrics']:
+        payload['metrics']['cpu'] = payload['metrics']['cpu'] / 100
+
     m = Metric(
         org=org,
         metrics=payload['metrics'],
