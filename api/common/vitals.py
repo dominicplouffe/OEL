@@ -55,7 +55,7 @@ def get_cpu_stats(instance_id, org, since=1):
     if len(percents) == 0:
         return 0.00
 
-    return sum(percents) / (len(percents) * 100)
+    return sum(percents) / len(percents)
 
 
 def get_mem_stats(instance_id, org, since=1):

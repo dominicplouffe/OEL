@@ -8,7 +8,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from api.common import vitals
 from api.common.metrics import graph
-from tools.color import GRADIENTS
+from tools.color import get_gradient
 
 
 class VitalInstancePermission(BasePermission):
@@ -106,26 +106,30 @@ class VitalInstancegViewSet(AuthenticatedViewSet):
             instance['instance_id'],
             org
         )
-        instance['cpu_status'] = GRADIENTS[int(instance['cpu_percent'] * 100)]
+        instance['cpu_status'] = get_gradient(int(
+            instance['cpu_percent'] * 100)
+        )
         instance['mem_percent'] = vitals.get_mem_stats(
             instance['instance_id'],
             org
         )
-        instance['mem_status'] = GRADIENTS[int(
-            instance['mem_percent'] * 100)]
+        instance['mem_status'] = get_gradient(int(
+            instance['mem_percent'] * 100)
+        )
 
         instance['disk_percent'] = vitals.get_disk_stats(
             instance['instance_id'],
             org
         )
-        instance['disk_status'] = GRADIENTS[int(
-            instance['disk_percent'] * 100)]
+        instance['disk_status'] = get_gradient(int(
+            instance['disk_percent'] * 100)
+        )
 
         total = (instance['cpu_percent'] +
                  instance['mem_percent'] +
                  instance['disk_percent']
                  ) / 3
 
-        instance['total_status'] = GRADIENTS[int(total * 100)]
+        instance['total_status'] = get_gradient(int(total * 100))
 
         return instance

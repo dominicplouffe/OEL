@@ -96,6 +96,7 @@ urlpatterns = [
 
     # Metics
     path('metrics/<api_key>', metrics.add_metrics, name="add-metrics"),
+    path('metrics-sample', metrics.metric_sample, name="metric-sample"),
 
     # Confirmation
     path('ping/acknowledge/<int:id>/', acknowledge, name='acknowledge'),
