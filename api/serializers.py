@@ -2,12 +2,21 @@ from rest_framework.serializers import (
     ModelSerializer, ReadOnlyField,  SerializerMethodField
 )
 from api.models import (
-    Org, OrgUser, Failure, PingHeader, Ping, Schedule, VitalInstance
+    Org, OrgUser, Failure, PingHeader, Ping, Schedule, VitalInstance,
+    Subscription
 )
 from django.contrib.auth.models import User
 
 
+class Subscription(ModelSerializer):
+
+    class Meta:
+        model = Subscription
+        fields = ['product', 'plan', 'status', 'paypal_subscription_id']
+
+
 class OrgSerializer(ModelSerializer):
+    subscriptions = Subscription(read_only=True, many=True)
 
     class Meta:
         model = Org

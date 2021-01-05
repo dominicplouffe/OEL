@@ -23,6 +23,7 @@ from api.views.auth import (
 from api.views import dashboard
 from api.views import metrics
 from api.views.vital_instance import VitalInstancegViewSet
+from api.views import paypal
 
 router = DefaultRouter()
 router.register(r'ping', PingViewSet, basename='ping')
@@ -106,7 +107,11 @@ urlpatterns = [
     path('failure/counts/<int:ping_id>/', failure_count, name='failure-count'),
 
     # Dashboard
-    path('dashboard', dashboard.index, name="index")
+    path('dashboard', dashboard.index, name="index"),
+
+    # Paypal
+    path('subscriptions/create',
+         paypal.create_subscription, name="create_subscription")
 ]
 
 urlpatterns.extend(router.urls)

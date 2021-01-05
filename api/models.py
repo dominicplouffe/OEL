@@ -326,3 +326,44 @@ class VitalInstance(models.Model):
     active = models.BooleanField(default=True)
     created_on = models.DateTimeField(default=datetime.now)
     updated_on = models.DateTimeField(auto_now=True)
+
+
+class Subscription(models.Model):
+    PRODUCTS = (
+        ('onerrorlog', 'OnErrorLog'),
+    )
+    PLANS = (
+        ('free', 'Free'),
+        ('basic', 'Basic'),
+        ('startup', 'Startup'),
+        ('enterprise', 'Enterprise'),
+    )
+    STATUSES = (
+        ('active', 'Active'),
+        ('cancelled', 'Cancelled'),
+        ('expired', 'Expired'),
+    )
+    org = models.ForeignKey(Org, on_delete=models.CASCADE,
+                            related_name='subscriptions', null=True)
+    product = models.CharField(
+        max_length=50,  choices=PRODUCTS
+    )
+    plan = models.CharField(
+        max_length=50,  choices=PLANS
+    )
+    status = models.CharField(
+        max_length=50,  choices=STATUSES
+    )
+
+    paypal_product_id = models.CharField(max_length=100, null=True, blank=True)
+    paypal_plan_id = models.CharField(max_length=100, null=True, blank=True)
+    paypal_subscription_id = models.CharField(
+        max_length=100, null=True, blank=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                name='u_subscription',
+                fields=['org', 'product', 'plan']
+            ),
+        ]

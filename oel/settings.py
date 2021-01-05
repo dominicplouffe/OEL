@@ -226,3 +226,9 @@ PONG_DATA_MAX_LEN = 16384
 TWILIO_SID = 'ACa68369fba14607cd774202b6f66cdd3e'
 TWILIO_AUTH_TOKEN = '2a89a2de2621ae8c9eab63d84df97e8d'
 TWILIO_PHONE = '+13437002903'
+
+PAYPAL_API = get_env_variable('PAYPAL_API', 'https://api.sandbox.paypal.com')
+PAYPAL_CLIENT_ID = get_env_variable(
+    'PAYPAL_CLIENT_ID', 'AaxRY3kRS9ouuVyaVGz-gmya7zCQnqTO4fVDkFPFLNQU77vwkdevkKX-R0JfMu-3nQTMete9cflK2kY6')
+PAYPAL_CLIENT_SECRET = get_env_variable(
+    'PAYPAL_CLIENT_SECRET', 'EHwf0fCA1V4Cuq7EyYSptozxmp-tB9qhx5ZCiWj7IpgWiPGfDbBTgp54zUbjU16e1bq77GBBlqvzrwOa')
