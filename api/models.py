@@ -11,6 +11,7 @@ class Org(models.Model):
 
     name = models.CharField(max_length=200, null=False)
     week = models.IntegerField(null=False, blank=False, default=1)
+    api_key = models.CharField(max_length=64, null=False, blank=False)
     created_on = models.DateTimeField(default=datetime.now)
     updated_on = models.DateTimeField(auto_now=True)
 
@@ -310,3 +311,19 @@ class NotificationBody(models.Model):
     delivery = models.CharField(
         max_length=20, null=True, blank=True, choices=DELIVERY_METHOD
     )
+
+
+class Metric(models.Model):
+    org = models.ForeignKey(Org, on_delete=models.CASCADE, null=True)
+    metrics = models.JSONField()
+    tags = models.JSONField()
+    created_on = models.DateTimeField(default=datetime.now)
+
+
+class VitalInstance(models.Model):
+    org = models.ForeignKey(Org, on_delete=models.CASCADE, null=True)
+    instance_id = models.CharField(max_length=256, null=True, blank=True)
+    name = models.CharField(max_length=256, null=True, blank=True)
+    active = models.BooleanField(default=True)
+    created_on = models.DateTimeField(default=datetime.now)
+    updated_on = models.DateTimeField(auto_now=True)

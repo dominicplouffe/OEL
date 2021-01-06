@@ -14,6 +14,7 @@ from api.common import schedule
 from random import randrange
 from datetime import datetime
 import json
+import uuid
 import re
 
 from api.serializers import UserSerializer, ChangePasswordSerializer
@@ -160,7 +161,8 @@ def signup_code_complete(request):
     )
 
     org = Org(
-        name=signup_info['company_name']
+        name=signup_info['company_name'],
+        api_key=str(uuid.uuid4())
     )
     org.save()
 

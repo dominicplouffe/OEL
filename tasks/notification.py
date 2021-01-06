@@ -67,7 +67,8 @@ def notification_check(
                         template_name,
                         {
                             'title': "OnErrorLog Failure : %s " % ping.name,
-                            'doc_link': ping.doc_link
+                            'doc_link': ping.doc_link,
+                            'failure_id': fail_res.id
                         }
                     )
                 else:
@@ -75,11 +76,13 @@ def notification_check(
 
                     if ping.direction == "pull":
                         text.send_ping_failure(
-                            org_user.phone_number, ping.name, ping.doc_link
+                            org_user.phone_number, ping.name, ping.doc_link,
+                            fail_res
                         )
                     else:
                         text.send_pong_failure(
-                            org_user.phone_number, ping.name, ping.doc_link
+                            org_user.phone_number, ping.name, ping.doc_link,
+                            fail_res
                         )
             else:
                 send_callback(ping, fail_res, response_time, 'failure')

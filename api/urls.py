@@ -24,6 +24,8 @@ from api.views.auth import (
     signup_code_complete, ChangePasswordView
 )
 from api.views import dashboard
+from api.views import metrics
+from api.views.vital_instance import VitalInstancegViewSet
 
 router = DefaultRouter()
 router.register(r'ping', PingViewSet, basename='ping')
@@ -33,6 +35,11 @@ router.register(r'org_user', OrgUserViewSet, basename='org_user')
 router.register(r'failure', FailureViewSet, basename='failure')
 router.register(r'ping_header', PingHeaderViewSet, basename='ping_header')
 router.register(r'org', OrgViewSet, basename='org')
+router.register(
+    r'vital_instance',
+    VitalInstancegViewSet,
+    basename='vital_instance'
+)
 
 urlpatterns = [
     path(
@@ -93,6 +100,10 @@ urlpatterns = [
 
     # Deadman Switch
     path('keepalive/<push_key>', keepalive, name='keepalive'),
+
+    # Metics
+    path('metrics/<api_key>', metrics.add_metrics, name="add-metrics"),
+    path('metrics-sample', metrics.metric_sample, name="metric-sample"),
 
     # Confirmation
     path('ping/acknowledge/<int:id>/', acknowledge, name='acknowledge'),

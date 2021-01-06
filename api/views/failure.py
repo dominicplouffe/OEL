@@ -20,6 +20,10 @@ from api.serializers import FailureSerializer
 class FailurePermission(BasePermission):
 
     def has_object_permission(self, request, view, object):
+
+        if object.ping.org.id == request.org.id:
+            return True
+
         if request.user.is_superuser:
             return True
 
@@ -54,8 +58,9 @@ def failure_count(request, ping_id):
     total = 0
 
     for f in failures:
-        counts[reasons[f.reason]] += 1
-        total += 1
+        if f.reason and f.reason in reasons:
+            counts[reasons[f.reason]] += 1
+            total += 1
 
     results = []
     for r, c in counts.items():

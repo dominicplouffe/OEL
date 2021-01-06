@@ -1,7 +1,9 @@
 from rest_framework.serializers import (
     ModelSerializer, ReadOnlyField,  SerializerMethodField
 )
-from api.models import (Org, OrgUser, Failure, PingHeader, Ping, Schedule)
+from api.models import (
+    Org, OrgUser, Failure, PingHeader, Ping, Schedule, VitalInstance
+)
 from django.contrib.auth.models import User
 
 
@@ -9,6 +11,28 @@ class OrgSerializer(ModelSerializer):
 
     class Meta:
         model = Org
+        fields = '__all__'
+
+
+class PingSerializer(ModelSerializer):
+
+    class Meta:
+        model = Ping
+        fields = '__all__'
+
+
+class VitalInstanceSerializer(ModelSerializer):
+
+    cpu_percent = ReadOnlyField()
+    cpu_status = ReadOnlyField()
+    mem_percent = ReadOnlyField()
+    mem_status = ReadOnlyField()
+    disk_percent = ReadOnlyField()
+    disk_status = ReadOnlyField()
+    total_status = ReadOnlyField()
+
+    class Meta:
+        model = VitalInstance
         fields = '__all__'
 
 
@@ -34,6 +58,10 @@ class OrgUserSerializer(ModelSerializer):
 class FailureSerializer(ModelSerializer):
 
     notify_org_user = OrgUserSerializer(read_only=True)
+    ping = PingSerializer(read_only=True)
+    acknowledged_by = OrgUserSerializer(read_only=True)
+    fixed_by = OrgUserSerializer(read_only=True)
+    ignored_by = OrgUserSerializer(read_only=True)
 
     class Meta:
         model = Failure
@@ -63,13 +91,6 @@ class ChangePasswordSerializer(ModelSerializer):
         user = self.context.get('user')
         validate_password(password, user)
         return password
-
-
-class PingSerializer(ModelSerializer):
-
-    class Meta:
-        model = Ping
-        fields = '__all__'
 
 
 class ScheduleSerializer(ModelSerializer):
