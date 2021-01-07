@@ -1,13 +1,10 @@
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from api.common.paypal import session, PRODUCTS
+from api.common.paypal import session
 from rest_framework import status
-from api.models import Subscription
+from api.models import Subscription, Product, Plan
 from django.db import transaction
-
-
-ONERRORLOG = PRODUCTS['onerrorlog']
 
 
 @api_view(['POST'])
@@ -33,13 +30,13 @@ def create_subscription(request):
 
     product_name = subscription_info['product']
 
-    if product_name not in PRODUCTS:
+    try:
+        product = Product.objects.get(name=product_name)
+    except Product.DoesNotExist:
         return Response(
             'Incorrect value for field: product',
             status=status.HTTP_400_BAD_REQUEST
         )
-
-    product = PRODUCTS[product_name]
 
     if 'plan' not in subscription_info:
         return Response(
@@ -49,12 +46,13 @@ def create_subscription(request):
 
     plan_name = subscription_info['plan']
 
-    if plan_name not in product['plans']:
+    try:
+        plan = Plan.objects.get(name=plan_name)
+    except Plan.DoesNotExist:
         return Response(
             'Incorrect value for field: plan',
             status=status.HTTP_400_BAD_REQUEST
         )
-    plan = product['plans'][plan_name]
 
     with transaction.atomic():
         paypal_api = session()
@@ -64,11 +62,9 @@ def create_subscription(request):
         )
         # TODO verify plan matches what was sent
         subscription = Subscription.objects.create(
-            org=org, product=product_name, plan=plan_name,
-            paypal_product_id=product['paypal_id'],
-            paypal_plan_id=plan['paypal_id'],
+            org=org, product=product, plan=plan,
             paypal_subscription_id=subscription_id,
-            status='active'
+            status='active', limits=plan.full_limits
         )
         subscription.save()
         return Response({'status': 'ok'}, status=status.HTTP_200_OK)

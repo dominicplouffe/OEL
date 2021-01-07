@@ -328,16 +328,39 @@ class VitalInstance(models.Model):
     updated_on = models.DateTimeField(auto_now=True)
 
 
+class Product(models.Model):
+    name = models.CharField(max_length=50, unique=True)
+    display = models.CharField(max_length=100)
+    is_enabled = models.BooleanField(default=True)
+    paypal_product_id = models.CharField(max_length=100, null=True, blank=True)
+    limits = models.JSONField(default={})
+
+
+class Plan(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE,
+                                related_name='plans')
+    name = models.CharField(max_length=50)
+    display = models.CharField(max_length=100)
+    is_enabled = models.BooleanField(default=True)
+    paypal_plan_id = models.CharField(max_length=100, null=True, blank=True)
+    limits = models.JSONField(default={})
+
+    @property
+    def full_limits(self):
+        limits = dict(**self.product.limits)
+        limits.update(self.limits)
+        return limits
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                name='u_plan',
+                fields=['product', 'name']
+            ),
+        ]
+
+
 class Subscription(models.Model):
-    PRODUCTS = (
-        ('onerrorlog', 'OnErrorLog'),
-    )
-    PLANS = (
-        ('free', 'Free'),
-        ('basic', 'Basic'),
-        ('startup', 'Startup'),
-        ('enterprise', 'Enterprise'),
-    )
     STATUSES = (
         ('active', 'Active'),
         ('cancelled', 'Cancelled'),
@@ -345,20 +368,32 @@ class Subscription(models.Model):
     )
     org = models.ForeignKey(Org, on_delete=models.CASCADE,
                             related_name='subscriptions', null=True)
-    product = models.CharField(
-        max_length=50,  choices=PRODUCTS
-    )
-    plan = models.CharField(
-        max_length=50,  choices=PLANS
-    )
+    product = models.ForeignKey(Product, on_delete=models.CASCADE,
+                                related_name='subscribers')
+    plan = models.ForeignKey(Plan, on_delete=models.CASCADE,
+                             related_name='subscribers')
     status = models.CharField(
         max_length=50,  choices=STATUSES
     )
 
-    paypal_product_id = models.CharField(max_length=100, null=True, blank=True)
-    paypal_plan_id = models.CharField(max_length=100, null=True, blank=True)
     paypal_subscription_id = models.CharField(
         max_length=100, null=True, blank=True)
+
+    limits = models.JSONField(default={})
+
+    @property
+    def full_limits(self):
+        limits = dict(**self.plan.full_limits)
+        limits.update(self.limits)
+        return limits
+
+    @property
+    def plan_name(self):
+        return self.plan.name
+
+    @property
+    def product_name(self):
+        return self.product.name
 
     class Meta:
         constraints = [

@@ -12,7 +12,8 @@ class Subscription(ModelSerializer):
 
     class Meta:
         model = Subscription
-        fields = ['product', 'plan', 'status', 'paypal_subscription_id']
+        fields = ['full_limits', 'limits',
+                  'plan_name', 'product_name', 'status']
 
 
 class OrgSerializer(ModelSerializer):
