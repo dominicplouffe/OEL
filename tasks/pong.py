@@ -7,7 +7,7 @@ from tasks.ping import insert_failure
 
 def process_pong(push_key):
 
-    pong = models.Ping.objects.filter(
+    pong = models.Pong.objects.filter(
         push_key=push_key,
         active=True
     ).first()
@@ -29,14 +29,14 @@ def process_pong(push_key):
 
     # Increment Result Hour
     result_hour = models.Result.objects.filter(
-        ping=pong,
+        alert=pong.alert,
         result_type='hour',
         result_date=hour_date
     ).first()
 
     if result_hour is None:
         result_hour = models.Result(
-            ping=pong,
+            alert=pong.alert,
             result_type='hour',
             result_date=hour_date,
             count=0,
@@ -51,14 +51,14 @@ def process_pong(push_key):
 
     # Increment Result Day
     result_day = models.Result.objects.filter(
-        ping=pong,
+        alert=pong.alert,
         result_type='day',
         result_date=day_date
     ).first()
 
     if result_day is None:
         result_day = models.Result(
-            ping=pong,
+            alert=pong.alert,
             result_type='day',
             result_date=day_date,
             count=0,
@@ -74,13 +74,21 @@ def process_pong(push_key):
     success = False
     oncall_user = schedule.get_on_call_user(pong.org)
 
-    fail_res = insert_failure(pong, "receive_alert", 500, "", oncall_user)
+    fail_res = insert_failure(
+        pong.alert,
+        "receive_alert",
+        500,
+        "",
+        oncall_user
+    )
 
     return notification_check(
         success,
-        pong,
+        pong.alert,
         result_day,
         fail_res,
         0,
-        oncall_user
+        oncall_user,
+        'pull',
+        pong.name
     )

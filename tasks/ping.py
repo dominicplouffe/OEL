@@ -14,10 +14,10 @@ from api.common import failure as fail_svc  # noqa
 import json  # noqa
 
 
-def insert_failure(ping, reason, status_code, content, org_user):
+def insert_failure(alert, reason, status_code, content, org_user):
 
     create_fail = False
-    fail = fail_svc.get_current_failure(ping)
+    fail = fail_svc.get_current_failure(alert)
 
     if not fail:
         create_fail = True
@@ -31,7 +31,7 @@ def insert_failure(ping, reason, status_code, content, org_user):
 
     if create_fail:
         fail = models.Failure(
-            ping=ping,
+            alert=alert,
             status_code=status_code,
             reason=reason,
             content=content[0:10000],

@@ -72,6 +72,60 @@ class OrgUser(models.Model):
         )
 
 
+class Alert(models.Model):
+    NOTIFICATION_TYPE = (
+        ('team', 'Team'),
+        ('callback', 'Callback')
+    )
+
+    notification_type = models.CharField(
+        max_length=20,
+        null=False,
+        blank=False,
+        choices=NOTIFICATION_TYPE
+    )
+
+    org = models.ForeignKey(Org, on_delete=models.CASCADE, null=True)
+    incident_interval = models.IntegerField(null=False, blank=False, default=1)
+    doc_link = models.CharField(max_length=255, null=True, blank=True)
+
+    active = models.BooleanField(default=True)
+    failure_count = models.IntegerField(default=0)
+
+    # How to communicate the failures
+    callback_url = models.CharField(max_length=255, null=True, blank=True)
+    callback_username = models.CharField(max_length=255, null=True, blank=True)
+    callback_password = models.CharField(max_length=255, null=True, blank=True)
+
+    notified_on = models.DateTimeField(null=True, blank=True)
+    created_on = models.DateTimeField(default=datetime.now)
+    updated_on = models.DateTimeField(auto_now=True)
+
+
+class Pong(models.Model):
+    org = models.ForeignKey(Org, on_delete=models.CASCADE, null=False)
+    name = models.CharField(max_length=30, null=False, blank=False)
+    active = models.BooleanField(default=True)
+
+    push_key = models.CharField(max_length=255, null=True, blank=True)
+
+    alert = models.ForeignKey(
+        Alert,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE
+    )
+
+    created_on = models.DateTimeField(default=datetime.now)
+    updated_on = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return '{0}({1})'.format(
+            self.org.name,
+            self.name
+        )
+
+
 class Ping(models.Model):
     CONTENT_TYPE = (
         ('text/plain', 'Text'),
@@ -145,6 +199,13 @@ class Ping(models.Model):
     # Pong Settings
     push_key = models.CharField(max_length=255, null=True, blank=True)
 
+    alert = models.ForeignKey(
+        Alert,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE
+    )
+
     def __str__(self):
         return '{0}({1})'.format(
             self.org.name,
@@ -182,8 +243,16 @@ class Result(models.Model):
     ping = models.ForeignKey(
         Ping,
         on_delete=models.CASCADE,
-        null=False
+        null=True
     )
+
+    alert = models.ForeignKey(
+        Alert,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE
+    )
+
     result_date = models.DateTimeField(null=False, blank=False)
     result_type = models.CharField(
         max_length=20,
@@ -221,8 +290,16 @@ class Failure(models.Model):
     ping = models.ForeignKey(
         Ping,
         on_delete=models.CASCADE,
-        null=False
+        null=True
     )
+
+    alert = models.ForeignKey(
+        Alert,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE
+    )
+
     status_code = models.IntegerField(null=False)
     reason = models.CharField(
         max_length=20,

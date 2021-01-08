@@ -7,7 +7,7 @@ from api.views.ping import (
     fix, acknowledge, ignore
 )
 from api.views.pong import (
-    pongme, PongViewSet
+    pongme, PongViewSet, pong_summary, pong_details
 )
 from api.views.failure import FailureViewSet, failure_count
 from api.views.ping_header import PingHeaderViewSet
@@ -93,6 +93,9 @@ urlpatterns = [
 
     # Pongs
     path('pongme/<push_key>', pongme, name='pong-me'),
+    path('pong/summary/', pong_summary, name='pong-summary'),
+    path('pong/summary/<int:id>/', pong_summary, name='pong-ind-summary'),
+    path('pong/details/<int:id>/', pong_details, name='pong-ind-details'),
 
     # Metics
     path('metrics/<api_key>', metrics.add_metrics, name="add-metrics"),
@@ -104,7 +107,7 @@ urlpatterns = [
     path('ping/ignore/<int:id>/', ignore, name='ignore'),
 
     # Failures and Incicents
-    path('failure/counts/<int:ping_id>/', failure_count, name='failure-count'),
+    path('failure/counts/<int:alert_id>/', failure_count, name='failure-count'),
 
     # Dashboard
     path('dashboard', dashboard.index, name="index")

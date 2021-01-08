@@ -20,7 +20,10 @@ def get_graph_data(metric_name, tags, org, interval=60, since=1):
     mt = Metric.objects.filter(**query).order_by('-created_on')
 
     values = [
-        {'created_on': m.created_on, 'value': m.metrics[metric_name]} for m in mt
+        {
+            'created_on': m.created_on,
+            'value': m.metrics[metric_name]}
+        for m in mt
     ]
     values.reverse()
 
