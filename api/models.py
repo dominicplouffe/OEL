@@ -221,8 +221,16 @@ class PingHeader(models.Model):
     ping = models.ForeignKey(
         Ping,
         on_delete=models.CASCADE,
-        null=False
+        null=True
     )
+
+    alert = models.ForeignKey(
+        Alert,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE
+    )
+
     key = models.CharField(max_length=255, null=False, blank=False)
     value = models.CharField(max_length=255, null=False, blank=False)
     header_type = models.CharField(
