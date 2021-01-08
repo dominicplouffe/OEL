@@ -242,7 +242,7 @@ def ping_summary(request, *args, **kwargs):
                 2
             )
 
-            pd['stats'] = failure.get_fail_stats(ping, hours)
+            pd['stats'] = failure.get_fail_stats(ping.alert, hours)
 
             downtime_hours = int(pd['downtime'] / 60 / 60)
             downtime_minutes = int((
@@ -278,7 +278,7 @@ def ping_summary(request, *args, **kwargs):
 
         pd['ping'] = PingSerializer(ping).data
         if not pd['status']:
-            fail = failure.get_current_failure(ping)
+            fail = failure.get_current_failure(ping.alert)
             if fail:
                 pd['fail'] = FailureSerializer(fail).data
 
