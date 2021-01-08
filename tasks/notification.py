@@ -23,20 +23,20 @@ def notification_check(
         if alert.failure_count > 0:
             alert.failure_count = 0
 
-            if ping.notification_type == "team":
+            if alert.notification_type == "team":
                 if org_user.notification_type == "email":
                     alert.notified_on = datetime.utcnow()
                     mail.send_html_mail(
                         org_user.email_address,
-                        "OnErrorLog Success : %s " % ping.name,
+                        "OnErrorLog Success : %s " % name,
                         "ping_recovered.html",
                         {
-                            'title': "OnErrorLog Success : %s " % ping.name
+                            'title': "OnErrorLog Success : %s " % name
                         }
                     )
                 else:
                     alert.notified_on = datetime.utcnow()
-                    text.send_ping_success(org_user.phone_number, ping.name)
+                    text.send_ping_success(org_user.phone_number, name)
             else:
                 # TODO
                 send_callback(ping, fail_res, response_time, 'success')
@@ -67,7 +67,7 @@ def notification_check(
                         template_name,
                         {
                             'title': "OnErrorLog Failure : %s " % name,
-                            'doc_link': ping.doc_link,
+                            'doc_link': alert.doc_link,
                             'failure_id': fail_res.id
                         }
                     )
@@ -76,12 +76,15 @@ def notification_check(
 
                     if direction == "pull":
                         text.send_ping_failure(
-                            org_user.phone_number, name, alert.doc_link,
+                            org_user.phone_number, name,
+                            alert.doc_link,
                             fail_res
                         )
                     else:
                         text.send_pong_failure(
-                            org_user.phone_number, name, alert.doc_link,
+                            org_user.phone_number,
+                            name,
+                            alert.doc_link,
                             fail_res
                         )
             else:

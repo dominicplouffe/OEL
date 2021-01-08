@@ -96,7 +96,7 @@ def process_ping(ping_id, failure=insert_failure, process_res=True):
         success = False
         reason = 'connection_error'
         fail_res = failure(
-            ping,
+            ping.alert,
             reason,
             0,
             '',
@@ -106,7 +106,7 @@ def process_ping(ping_id, failure=insert_failure, process_res=True):
         success = False
         reason = 'timeout_error'
         fail_res = failure(
-            ping,
+            ping.alert,
             reason,
             0,
             '',
@@ -116,7 +116,7 @@ def process_ping(ping_id, failure=insert_failure, process_res=True):
         success = False
         reason = 'http_error'
         fail_res = failure(
-            ping,
+            ping.alert,
             reason,
             0,
             '',
@@ -129,7 +129,7 @@ def process_ping(ping_id, failure=insert_failure, process_res=True):
             success = False
             reason = 'status_code'
             fail_res = failure(
-                ping,
+                ping.alert,
                 reason,
                 res.status_code,
                 res.content.decode('utf-8'),
@@ -148,7 +148,7 @@ def process_ping(ping_id, failure=insert_failure, process_res=True):
                 if content_value != ping.expected_value.lower():
                     reason = 'value_error'
                     fail_res = failure(
-                        ping,
+                        ping.alert,
                         reason,
                         res.status_code,
                         res.content.decode('utf-8'),
@@ -159,7 +159,7 @@ def process_ping(ping_id, failure=insert_failure, process_res=True):
                 success = False
                 reason = 'key_error'
                 fail_res = failure(
-                    ping,
+                    ping.alert,
                     reason,
                     res.status_code,
                     res.content.decode('utf-8'),
@@ -169,7 +169,7 @@ def process_ping(ping_id, failure=insert_failure, process_res=True):
                 success = False
                 reason = 'key_error'
                 fail_res = failure(
-                    ping,
+                    ping.alert,
                     reason,
                     res.status_code,
                     res.content.decode('utf-8'),
@@ -182,7 +182,7 @@ def process_ping(ping_id, failure=insert_failure, process_res=True):
                 success = False
                 reason = 'invalid_value'
                 fail_res = failure(
-                    ping,
+                    ping.alert,
                     reason,
                     res.status_code,
                     res.content.decode('utf-8'),
@@ -204,14 +204,14 @@ def process_ping(ping_id, failure=insert_failure, process_res=True):
 
         # Increment Result Hour
         result_hour = models.Result.objects.filter(
-            ping=ping,
+            alert=ping.alert,
             result_type='hour',
             result_date=hour_date
         ).first()
 
         if result_hour is None:
             result_hour = models.Result(
-                ping=ping,
+                alert=ping.alert,
                 result_type='hour',
                 result_date=hour_date,
                 count=0,
@@ -231,14 +231,14 @@ def process_ping(ping_id, failure=insert_failure, process_res=True):
 
         # Increment Result Day
         result_day = models.Result.objects.filter(
-            ping=ping,
+            alert=ping.alert,
             result_type='day',
             result_date=day_date
         ).first()
 
         if result_day is None:
             result_day = models.Result(
-                ping=ping,
+                alert=ping.alert,
                 result_type='day',
                 result_date=day_date,
                 count=0,
@@ -257,7 +257,14 @@ def process_ping(ping_id, failure=insert_failure, process_res=True):
         result_day.save()
 
         notification_check(
-            success, ping, result_day, fail_res, diff, oncall_user
+            success,
+            ping.alert,
+            result_day,
+            fail_res,
+            diff,
+            oncall_user,
+            'pull',
+            ping.name
         )
     else:
 
