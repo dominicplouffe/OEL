@@ -35,8 +35,6 @@ def check_notification_rule(org, instance_id, rule, send_notification=False):
         if value > rule['value']:
             trigger = True
 
-    print(value, trigger)
-
     if trigger and send_notification:
         # Send the notification
         pass

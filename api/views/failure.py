@@ -1,4 +1,4 @@
-from api.models import Failure, Ping
+from api.models import Failure, Alert
 from rest_framework import filters
 from api.base import AuthenticatedViewSet
 from api.views.org_user import OrgUserSerializer
@@ -21,7 +21,7 @@ class FailurePermission(BasePermission):
 
     def has_object_permission(self, request, view, object):
 
-        if object.ping.org.id == request.org.id:
+        if object.alert.org.id == request.org.id:
             return True
 
         if request.user.is_superuser:
@@ -37,21 +37,21 @@ class FailureViewSet(AuthenticatedViewSet):
     permission_classes = [FailurePermission]
 
     model = Failure
-    filterset_fields = ['ping']
+    filterset_fields = ['alert']
     ordering_fields = ['created_on', 'status_code']
 
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def failure_count(request, ping_id):
+def failure_count(request, alert_id):
     org = request.org
 
     try:
-        ping = Ping.objects.get(org=org, pk=ping_id)
-    except Ping.DoesNotExist:
+        alert = Alert.objects.get(org=org, pk=alert_id)
+    except Alert.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
 
-    failures = Failure.objects.filter(ping=ping)
+    failures = Failure.objects.filter(alert=alert)
 
     counts = defaultdict(int)
     reasons = {x: y for x, y in Failure.REASON}

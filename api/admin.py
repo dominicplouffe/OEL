@@ -1,13 +1,15 @@
 from django.contrib import admin
 
 from .models import (
-    Org, OrgUser, Ping, PingHeader,
-    Result, Failure, Schedule, Metric, VitalInstance
+    Org, OrgUser, Ping, PingHeader, Pong,
+    Result, Failure, Schedule, Metric, VitalInstance, Alert
 )
 
+admin.site.register(Alert)
 admin.site.register(Org)
 admin.site.register(OrgUser)
 admin.site.register(Ping)
+admin.site.register(Pong)
 admin.site.register(PingHeader)
 admin.site.register(Result)
 admin.site.register(Failure)

@@ -2,7 +2,8 @@ from rest_framework.serializers import (
     ModelSerializer, ReadOnlyField,  SerializerMethodField
 )
 from api.models import (
-    Org, OrgUser, Failure, PingHeader, Ping, Schedule, VitalInstance
+    Org, OrgUser, Failure, PingHeader, Ping, Schedule, VitalInstance, Alert,
+    Pong
 )
 from django.contrib.auth.models import User
 
@@ -14,10 +15,28 @@ class OrgSerializer(ModelSerializer):
         fields = '__all__'
 
 
+class AlertSerializer(ModelSerializer):
+
+    class Meta:
+        model = Alert
+        fields = '__all__'
+
+
 class PingSerializer(ModelSerializer):
+
+    alert = AlertSerializer(read_only=True)
 
     class Meta:
         model = Ping
+        fields = '__all__'
+
+
+class PongSerializer(ModelSerializer):
+
+    alert = AlertSerializer(read_only=True)
+
+    class Meta:
+        model = Pong
         fields = '__all__'
 
 

@@ -104,14 +104,16 @@ class VitalInstancegViewSet(AuthenticatedViewSet):
     def get_instance_details(self, instance, org):
         instance['cpu_percent'] = vitals.get_cpu_stats(
             instance['instance_id'],
-            org
+            org,
+            since=24
         )
         instance['cpu_status'] = get_gradient(int(
             instance['cpu_percent'] * 100)
         )
         instance['mem_percent'] = vitals.get_mem_stats(
             instance['instance_id'],
-            org
+            org,
+            since=24
         )
         instance['mem_status'] = get_gradient(int(
             instance['mem_percent'] * 100)
@@ -119,7 +121,8 @@ class VitalInstancegViewSet(AuthenticatedViewSet):
 
         instance['disk_percent'] = vitals.get_disk_stats(
             instance['instance_id'],
-            org
+            org,
+            since=24
         )
         instance['disk_status'] = get_gradient(int(
             instance['disk_percent'] * 100)
