@@ -96,11 +96,11 @@ def notification_check(
     return notification_sent
 
 
-def send_callback(ping, fail_res, response_time, status):
+def send_callback(alert, fail_res, response_time, status):
     endpoint = ping.callback_url
 
     ping_headers = models.PingHeader.objects.filter(
-        ping=ping,
+        alert=alert,
         header_type='callback'
     )
 
@@ -109,10 +109,10 @@ def send_callback(ping, fail_res, response_time, status):
         headers[h.key] = h.value
 
     pass_info = None
-    if ping.callback_userame and ping.callback_password:
+    if alert.callback_userame and alert.callback_password:
         pass_info = (
-            ping.callback_userame,
-            ping.callback_password
+            alert.callback_userame,
+            alert.callback_password
         )
 
     try:

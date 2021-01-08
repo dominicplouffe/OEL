@@ -20,7 +20,7 @@ class PingHeaderPermission(BasePermission):
 
     def has_object_permission(self, request, view, object):
 
-        return request.org.id == object.ping.org.id
+        return request.org.id == object.alert.org.id
 
 
 class PingHeaderViewSet(AuthenticatedViewSet):
@@ -30,5 +30,5 @@ class PingHeaderViewSet(AuthenticatedViewSet):
     permission_classes = [PingHeaderPermission]
 
     model = PingHeader
-    filterset_fields = ['ping', 'header_type']
+    filterset_fields = ['alert', 'header_type']
     ordering_fields = []

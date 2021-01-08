@@ -38,6 +38,10 @@ def update_pings():
             f.alert = ping.alert
             f.save()
 
+        for h in models.PingHeader.objects.filter(ping=ping):
+            h.alert = ping.alert
+            h.save()
+
         print(ping.id)
 
 

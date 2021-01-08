@@ -69,7 +69,7 @@ def process_ping(ping_id, failure=insert_failure, process_res=True):
     endpoint = ping.endpoint
 
     ping_headers = models.PingHeader.objects.filter(
-        ping=ping,
+        alert=ping.alert,
         header_type='endpoint'
     )
 
