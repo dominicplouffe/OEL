@@ -11,6 +11,7 @@ from api.views.pong import (
 )
 from api.views.failure import FailureViewSet, failure_count
 from api.views.ping_header import PingHeaderViewSet
+from api.views.metric_condition import MetricConditionViewSet
 from api.views.org_user import (
     OrgUserViewSet, send_invite, check_invite, finish_invite, resend_invite,
     update_user_order, send_notification_update
@@ -31,6 +32,11 @@ router.register(r'org_user', OrgUserViewSet, basename='org_user')
 router.register(r'failure', FailureViewSet, basename='failure')
 router.register(r'ping_header', PingHeaderViewSet, basename='ping_header')
 router.register(r'org', OrgViewSet, basename='org')
+router.register(
+    r'metric_condition',
+    MetricConditionViewSet,
+    basename='metric_condition'
+)
 router.register(
     r'vital_instance',
     VitalInstancegViewSet,

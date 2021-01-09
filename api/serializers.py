@@ -3,7 +3,7 @@ from rest_framework.serializers import (
 )
 from api.models import (
     Org, OrgUser, Failure, PingHeader, Ping, Schedule, VitalInstance, Alert,
-    Pong
+    Pong, MetricCondition
 )
 from django.contrib.auth.models import User
 
@@ -116,4 +116,10 @@ class ScheduleSerializer(ModelSerializer):
 
     class Meta:
         model = Schedule
+        fields = '__all__'
+
+
+class MetricConditionSerializer(ModelSerializer):
+    class Meta:
+        model = MetricCondition
         fields = '__all__'

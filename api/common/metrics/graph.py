@@ -2,7 +2,7 @@ from api.models import Metric
 from datetime import datetime, timedelta
 
 
-def get_graph_data(metric_name, tags, org, interval=60, since=1):
+def get_graph_data(metric_name, tags, org, interval=1060, since=1):
 
     interval = interval * 60
 
@@ -27,7 +27,11 @@ def get_graph_data(metric_name, tags, org, interval=60, since=1):
     ]
     values.reverse()
 
-    current_interval = values[0]['created_on']
+    if values:
+        current_interval = values[0]['created_on']
+    else:
+        current_interval = 0
+
     current_values = []
 
     graph_metrics = []

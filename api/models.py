@@ -411,3 +411,36 @@ class VitalInstance(models.Model):
     active = models.BooleanField(default=True)
     created_on = models.DateTimeField(default=datetime.now)
     updated_on = models.DateTimeField(auto_now=True)
+
+
+class MetricCondition(models.Model):
+
+    METRIC_ROLLUP = (
+        ('value', 'Last Value'),
+        ('avg', 'Average'),
+        ('sum', 'Sum')
+    )
+
+    SPAN = (
+        ('days', 'Days'),
+        ('hours', 'Hours')
+    )
+
+    org = models.ForeignKey(Org, on_delete=models.CASCADE, null=True)
+    instance = models.ForeignKey(
+        VitalInstance,
+        on_delete=models.CASCADE,
+        null=True
+    )
+    rule = models.JSONField()
+    active = models.BooleanField(null=False)
+
+    alert = models.ForeignKey(
+        Alert,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE
+    )
+
+    created_on = models.DateTimeField(default=datetime.now)
+    updated_on = models.DateTimeField(auto_now=True)

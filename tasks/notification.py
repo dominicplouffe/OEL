@@ -1,9 +1,8 @@
-import pytz
 import requests
 from api.tools import mail, text
 from api import models
 from datetime import datetime
-from api.common import schedule, failure
+from api.common import failure
 
 
 def notification_check(
