@@ -12,6 +12,7 @@ from rest_framework.decorators import api_view, permission_classes
 from tasks.ping import process_ping, insert_failure
 from django_celery_beat.models import PeriodicTask, IntervalSchedule
 from datetime import datetime, timedelta
+from api.common import alert_summary
 
 from api.serializers import PingSerializer, FailureSerializer
 
@@ -168,128 +169,14 @@ def ping_summary(request, *args, **kwargs):
             org=org
         ).order_by('created_on')
 
-    data = {
-        'total': len(pings),
-        'active': 0,
-        'paused': 0,
-        'up': 0,
-        'down': 0
-    }
-    ping_data = []
+    summary = alert_summary.get_alert_summary(
+        pings,
+        PingSerializer,
+        hours=hours
+    )
 
-    now = datetime.now(pytz.UTC)
-    now = datetime(now.year, now.month, now.day, now.hour)
-    ago = now - timedelta(hours=hours)
-
-    for ping in pings:
-        pd = {
-            'status': True,
-            'count': 0,
-            'success': 0,
-            'failure': 0,
-            'total_time': 0,
-            'avg_resp': 0.00,
-            'downtime': 0,
-            'downtime_s': '0m 0s',
-            'availability': 0.000,
-            'snapshot': {}
-        }
-
-        start = ago + timedelta(hours=1)
-        while start <= now:
-            pd['snapshot'][start] = {
-                'success': 0,
-                'failure': 0,
-                'count': 0,
-                'status': None,
-                'avg_res': 0,
-                'date': start
-            }
-            start += timedelta(hours=1)
-
-        if ping.alert.failure_count > 0:
-            data['down'] += 1
-            pd['status'] = False
-        else:
-            data['up'] += 1
-
-        if ping.active:
-            data['active'] += 1
-        else:
-            data['paused'] += 1
-
-        results = Result.objects.filter(
-            alert=ping.alert,
-            result_type='hour',
-            result_date__gte=ago
-        ).order_by('result_date')
-
-        pd['downtime'] = 0
-        pd['avg_resp'] = 0
-        pd['total_time'] = 0
-        pd['availability'] = 0
-
-        for res in results:
-            pd['count'] += res.count
-            pd['success'] += res.success
-            pd['failure'] += res.failure
-
-            pd['downtime'] += ping.interval * res.failure * 60
-            pd['total_time'] += res.total_time
-            pd['avg_resp'] = pd['total_time'] / pd['count']
-            pd['availability'] = round(
-                100*pd['success'] / pd['count'],
-                2
-            )
-
-            pd['stats'] = failure.get_fail_stats(ping.alert, hours)
-
-            downtime_hours = int(pd['downtime'] / 60 / 60)
-            downtime_minutes = int((
-                pd['downtime'] - (downtime_hours * 60 * 60)
-            ) / 60)
-
-            pd['downtime_s'] = '%sh %sm' % (downtime_hours, downtime_minutes)
-
-            res_date = res.result_date
-            res_date = datetime(
-                res_date.year, res_date.month, res_date.day, res_date.hour
-            )
-
-            if res_date in pd['snapshot']:
-                pd['snapshot'][res_date] = {
-                    'success': res.success,
-                    'failure': res.failure,
-                    'count': res.count,
-                    'status': None,
-                    'avg_res': res.total_time / res.count,
-                    'date': res_date
-                }
-                if res.count == res.success:
-                    pd['snapshot'][res_date]['status'] = 'success'
-                elif res.count == res.failure:
-                    pd['snapshot'][res_date]['status'] = 'danger'
-                else:
-                    pd['snapshot'][res_date]['status'] = 'warning'
-
-        pd['snapshot'] = [
-            y for x, y in sorted(pd['snapshot'].items(), key=lambda x: x[0])
-        ]
-
-        pd['ping'] = PingSerializer(ping).data
-        if not pd['status']:
-            fail = failure.get_current_failure(ping.alert)
-            if fail:
-                pd['fail'] = FailureSerializer(fail).data
-
-        ping_data.append(pd)
-
-    ping_data = sorted(ping_data, key=lambda x: -x['ping']['active'])
     return Response(
-        {
-            'totals': data,
-            'pings': ping_data
-        },
+        summary,
         status=status.HTTP_200_OK
     )
 

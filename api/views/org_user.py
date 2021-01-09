@@ -95,6 +95,16 @@ class OrgUserViewSet(AuthenticatedViewSet):
         usr.save()
         usr.user.save()
 
+        num_users = OrgUser.objects.filter(
+            org=request.org,
+            active=True,
+            is_oncall=True
+        ).count()
+
+        if request.org.week > num_users:
+            request.org.week = request.org.week - 1
+            request.org.save()
+
         return Response(
             OrgUserSerializer(usr).data,
             status=status.HTTP_200_OK
