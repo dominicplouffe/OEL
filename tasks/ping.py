@@ -113,7 +113,7 @@ def process_ping(ping_id, failure=insert_failure, process_res=True):
             '',
             oncall_user
         )
-    except:
+    except BaseException:
         success = False
         reason = 'http_error'
         fail_res = failure(
@@ -193,12 +193,15 @@ def process_ping(ping_id, failure=insert_failure, process_res=True):
     if (not process_res):
         return res, reason
 
+    diff = (end_time - start_time).total_seconds()
+
     return process_result(
         success,
         ping.alert,
         fail_res,
         ping.name,
-        oncall_user
+        oncall_user,
+        diff=diff
     )
 
 

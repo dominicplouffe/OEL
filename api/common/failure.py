@@ -46,8 +46,6 @@ def get_fail_stats(alert, hours):
         'resolved': 0
     }
     for f in fails:
-        created_on = f.created_on
-
         if f.recovered_on is not None:
             stats['total_time'] += (
                 f.recovered_on - f.created_on

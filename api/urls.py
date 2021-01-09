@@ -110,7 +110,11 @@ urlpatterns = [
     path('ping/ignore/<int:id>/', ignore, name='ignore'),
 
     # Failures and Incicents
-    path('failure/counts/<int:alert_id>/', failure_count, name='failure-count'),
+    path(
+        'failure/counts/<int:alert_id>/',
+        failure_count,
+        name='failure-count'
+    ),
 
     # Summary
     path(

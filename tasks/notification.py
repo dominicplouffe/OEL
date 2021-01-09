@@ -1,8 +1,10 @@
-import requests
-from api.tools import mail, text
-from api import models
+import json
 from datetime import datetime
+
+import requests
+from api import models
 from api.common import failure
+from api.tools import mail, text
 
 
 def notification_check(
@@ -38,7 +40,7 @@ def notification_check(
                     text.send_ping_success(org_user.phone_number, name)
             else:
                 # TODO
-                send_callback(ping, fail_res, response_time, 'success')
+                send_callback(alert, fail_res, response_time, 'success')
 
             failure.recover_failure(alert)
 
@@ -96,7 +98,7 @@ def notification_check(
 
 
 def send_callback(alert, fail_res, response_time, status):
-    endpoint = ping.callback_url
+    endpoint = alert.callback_url
 
     ping_headers = models.PingHeader.objects.filter(
         alert=alert,
@@ -129,4 +131,5 @@ def send_callback(alert, fail_res, response_time, status):
     except Exception as e:
         # If there's an error on the customer's callback, we ignore at the
         # moment.  We need to handle this somehow.
+        print(e)
         pass

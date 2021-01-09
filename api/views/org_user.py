@@ -1,12 +1,11 @@
 import re
 import json
 from random import randrange
-from api.models import OrgUser, Org, Schedule
+from api.models import OrgUser
 from django.contrib.auth.models import User
 from api.base import AuthenticatedViewSet
 from rest_framework.permissions import BasePermission
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from rest_framework.serializers import ModelSerializer
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework import filters
 from django_filters.rest_framework import DjangoFilterBackend
@@ -15,9 +14,7 @@ from api.common import schedule
 from rest_framework.response import Response
 from django.http.request import QueryDict
 from datetime import datetime
-from api.tools import mail, cache, colors
-from api.views.org import OrgSerializer
-
+from api.tools import mail, cache, colors, text
 from api.serializers import OrgUserSerializer
 
 
