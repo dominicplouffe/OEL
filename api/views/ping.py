@@ -1,8 +1,6 @@
-import pytz
 from api.models import Ping, Result, Failure, Alert
 from rest_framework import filters
 from api.base import AuthenticatedViewSet
-from api.common import failure
 from rest_framework.permissions import BasePermission
 from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
@@ -12,9 +10,8 @@ from rest_framework.decorators import api_view, permission_classes
 from tasks.ping import process_ping, insert_failure
 from django_celery_beat.models import PeriodicTask, IntervalSchedule
 from datetime import datetime, timedelta
-from api.common import alert_summary
 
-from api.serializers import PingSerializer, FailureSerializer
+from api.serializers import PingSerializer
 
 
 class PingPermission(BasePermission):
@@ -195,7 +192,9 @@ def ping_details(request, id):
         return Response(status=status.HTTP_404_NOT_FOUND)
 
     if ping.org.id != request.org.id:
-        return Response(status=status.HTTP_403_FORBIDDEN)
+        return Response(
+            status=status.HTTP_403_FORBIDDEN
+        )
 
     now = datetime.utcnow()
     now = datetime(now.year, now.month, now.day)
@@ -226,27 +225,17 @@ def ping_details(request, id):
     for res in results:
         d = res.result_date
         d = datetime(d.year, d.month, d.day)
-        status = 'success'
+        status_msg = 'success'
         status_text = 'Everything looks great today'
 
         if res.success / res.count < 0.90:
-            status = 'danger'
+            status_msg = 'danger'
             status_text = 'Many pings failed on this day'
         elif res.failure > 1:
-            status = 'warning'
+            status_msg = 'warning'
             status_text = 'At least one failure on this day'
 
-        # if ping.direction == 'pull':
-
-        # else:
-        #     if res.count >= 5:
-        #         status = 'danger'
-        #         status_text = 'Many pongs were triggered on this day'
-        #     elif res.count >= 1:
-        #         status = 'warning'
-        #         status_text = 'One or more pongs where triggered on this day'
-
-        calendar_data[d]['status'] = status
+        calendar_data[d]['status'] = status_msg
         calendar_data[d]['text'] = status_text
         calendar_data[d]['success'] = res.success
         calendar_data[d]['failure'] = res.failure

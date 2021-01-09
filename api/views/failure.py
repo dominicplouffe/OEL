@@ -1,17 +1,12 @@
 from api.models import Failure, Alert
 from rest_framework import filters
 from api.base import AuthenticatedViewSet
-from api.views.org_user import OrgUserSerializer
 from rest_framework.permissions import BasePermission
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.serializers import ModelSerializer
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
-from tasks.ping import process_ping
-from django_celery_beat.models import PeriodicTask, IntervalSchedule
-from datetime import datetime, timedelta
 from collections import defaultdict
 
 from api.serializers import FailureSerializer

@@ -1,20 +1,16 @@
-import json
 from datetime import datetime, timedelta
 
-import pytz
 from api.base import AuthenticatedViewSet
-from api.common import alert_summary, failure
 from api.models import Alert, Pong, Result
-from api.serializers import FailureSerializer, PongSerializer
+from api.serializers import PongSerializer
 from api.tools import cache
 from django_filters.rest_framework import DjangoFilterBackend
-from oel.settings import PONG_DATA_MAX_LEN, SECS_BETWEEN_PONGS
+from oel.settings import SECS_BETWEEN_PONGS
 from rest_framework import filters, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import (AllowAny, BasePermission,
                                         IsAuthenticated)
 from rest_framework.response import Response
-from rest_framework.serializers import ModelSerializer
 from tasks.pong import process_pong
 
 
@@ -26,7 +22,7 @@ class PongKeyPermission(BasePermission):
             return False
 
         try:
-            pong = Pong.objects.get(push_key=xauth)
+            Pong.objects.get(push_key=xauth)
         except Pong.DoesNotExist:
             return False
 
@@ -202,24 +198,24 @@ def pong_details(request, id):
     for res in results:
         d = res.result_date
         d = datetime(d.year, d.month, d.day)
-        status = 'success'
+        status_msg = 'success'
         status_text = 'Everything looks great today'
 
         if res.success / res.count < 0.90:
-            status = 'danger'
+            status_msg = 'danger'
             status_text = 'Many pongs failed on this day'
         elif res.failure > 1:
-            status = 'warning'
+            status_msg = 'warning'
             status_text = 'At least one failure on this day'
 
         if res.count >= 5:
-            status = 'danger'
+            status_msg = 'danger'
             status_text = 'Many pongs were triggered on this day'
         elif res.count >= 1:
-            status = 'warning'
+            status_msg = 'warning'
             status_text = 'One or more pongs where triggered on this day'
 
-        calendar_data[d]['status'] = status
+        calendar_data[d]['status'] = status_msg
         calendar_data[d]['text'] = status_text
         calendar_data[d]['success'] = res.success
         calendar_data[d]['failure'] = res.failure

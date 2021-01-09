@@ -78,7 +78,7 @@ def get_alert_summary(objects, serializer, hours=24):
                 pd['total_time'] += res.total_time
                 pd['avg_resp'] = pd['total_time'] / pd['count']
                 pd['availability'] = round(
-                    100*pd['success'] / pd['count'],
+                    100 * pd['success'] / pd['count'],
                     2
                 )
 

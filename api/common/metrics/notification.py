@@ -1,4 +1,3 @@
-import json
 from api.models import Metric
 from api.common import schedule
 from tasks.ping import insert_failure
