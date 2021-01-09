@@ -204,4 +204,4 @@ def process_ping(ping_id, failure=insert_failure, process_res=True):
 
 if __name__ == '__main__':
 
-    process_ping(1)
+    process_ping(2)

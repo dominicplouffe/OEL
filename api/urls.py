@@ -7,7 +7,7 @@ from api.views.ping import (
     fix, acknowledge, ignore
 )
 from api.views.pong import (
-    pongme, PongViewSet, pong_summary, pong_details
+    pongme, PongViewSet, pong_details
 )
 from api.views.failure import FailureViewSet, failure_count
 from api.views.ping_header import PingHeaderViewSet
@@ -23,6 +23,7 @@ from api.views.auth import (
 )
 from api.views import dashboard
 from api.views import metrics
+from api.views import summary
 from api.views.vital_instance import VitalInstancegViewSet
 
 router = DefaultRouter()
@@ -99,8 +100,6 @@ urlpatterns = [
 
     # Pongs
     path('pongme/<push_key>', pongme, name='pong-me'),
-    path('pong/summary/', pong_summary, name='pong-summary'),
-    path('pong/summary/<int:id>/', pong_summary, name='pong-ind-summary'),
     path('pong/details/<int:id>/', pong_details, name='pong-ind-details'),
 
     # Metics
@@ -114,6 +113,19 @@ urlpatterns = [
 
     # Failures and Incicents
     path('failure/counts/<int:alert_id>/', failure_count, name='failure-count'),
+
+    # Summary
+    path(
+        'alert_summary/<str:object>/',
+        summary.summarizer,
+        name='alert-summary'
+    ),
+
+    path(
+        'alert_summary/<str:object>/<int:id>/',
+        summary.summarizer,
+        name='alert-summary-details'
+    ),
 
     # Dashboard
     path('dashboard', dashboard.index, name="index")
