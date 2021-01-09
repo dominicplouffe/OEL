@@ -3,7 +3,7 @@ from rest_framework_simplejwt import views as jwt_views
 from django.urls import path
 
 from api.views.ping import (
-    PingViewSet, ping_test, ping_summary, ping_details, ping_now,
+    PingViewSet, ping_test, ping_details, ping_now,
     fix, acknowledge, ignore
 )
 from api.views.pong import (
@@ -93,8 +93,6 @@ urlpatterns = [
 
     # Pings
     path('ping-test/<int:id>/', ping_test, name='ping-test'),
-    path('ping/summary/', ping_summary, name='ping-summary'),
-    path('ping/summary/<int:id>/', ping_summary, name='ping-ind-summary'),
     path('ping/details/<int:id>/', ping_details, name='ping-ind-details'),
     path('ping/now/<int:id>/', ping_now, name='ping-now'),
 

@@ -152,35 +152,6 @@ class PingViewSet(AuthenticatedViewSet):
         )
 
 
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def ping_summary(request, *args, **kwargs):
-
-    org = request.org
-    hours = int(request.GET.get('hours', 24))
-
-    if 'id' in kwargs:
-        pings = Ping.objects.filter(
-            org=org,
-            id=kwargs['id']
-        )
-    else:
-        pings = Ping.objects.filter(
-            org=org
-        ).order_by('created_on')
-
-    summary = alert_summary.get_alert_summary(
-        pings,
-        PingSerializer,
-        hours=hours
-    )
-
-    return Response(
-        summary,
-        status=status.HTTP_200_OK
-    )
-
-
 @ api_view(['GET'])
 @ permission_classes([IsAuthenticated])
 def ping_test(request, id):
