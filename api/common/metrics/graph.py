@@ -2,7 +2,7 @@ from api.models import Metric
 from datetime import datetime, timedelta
 
 
-def get_graph_data(metric_name, tags, org, interval=1060, since=1):
+def get_graph_data(metric_name, tags, org, interval=60, since=1):
 
     interval = interval * 60
 
