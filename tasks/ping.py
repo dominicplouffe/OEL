@@ -12,12 +12,13 @@ from tasks.notification import notification_check  # noqa
 from api.common import schedule  # noqa
 from api.common import failure as fail_svc  # noqa
 import json  # noqa
+from api.common.result import process_result  # noqa
 
 
-def insert_failure(ping, reason, status_code, content, org_user):
+def insert_failure(alert, reason, status_code, content, org_user):
 
     create_fail = False
-    fail = fail_svc.get_current_failure(ping)
+    fail = fail_svc.get_current_failure(alert)
 
     if not fail:
         create_fail = True
@@ -31,7 +32,7 @@ def insert_failure(ping, reason, status_code, content, org_user):
 
     if create_fail:
         fail = models.Failure(
-            ping=ping,
+            alert=alert,
             status_code=status_code,
             reason=reason,
             content=content[0:10000],
@@ -69,7 +70,7 @@ def process_ping(ping_id, failure=insert_failure, process_res=True):
     endpoint = ping.endpoint
 
     ping_headers = models.PingHeader.objects.filter(
-        ping=ping,
+        alert=ping.alert,
         header_type='endpoint'
     )
 
@@ -96,7 +97,7 @@ def process_ping(ping_id, failure=insert_failure, process_res=True):
         success = False
         reason = 'connection_error'
         fail_res = failure(
-            ping,
+            ping.alert,
             reason,
             0,
             '',
@@ -106,17 +107,17 @@ def process_ping(ping_id, failure=insert_failure, process_res=True):
         success = False
         reason = 'timeout_error'
         fail_res = failure(
-            ping,
+            ping.alert,
             reason,
             0,
             '',
             oncall_user
         )
-    except:
+    except BaseException:
         success = False
         reason = 'http_error'
         fail_res = failure(
-            ping,
+            ping.alert,
             reason,
             0,
             '',
@@ -129,7 +130,7 @@ def process_ping(ping_id, failure=insert_failure, process_res=True):
             success = False
             reason = 'status_code'
             fail_res = failure(
-                ping,
+                ping.alert,
                 reason,
                 res.status_code,
                 res.content.decode('utf-8'),
@@ -148,7 +149,7 @@ def process_ping(ping_id, failure=insert_failure, process_res=True):
                 if content_value != ping.expected_value.lower():
                     reason = 'value_error'
                     fail_res = failure(
-                        ping,
+                        ping.alert,
                         reason,
                         res.status_code,
                         res.content.decode('utf-8'),
@@ -159,7 +160,7 @@ def process_ping(ping_id, failure=insert_failure, process_res=True):
                 success = False
                 reason = 'key_error'
                 fail_res = failure(
-                    ping,
+                    ping.alert,
                     reason,
                     res.status_code,
                     res.content.decode('utf-8'),
@@ -169,7 +170,7 @@ def process_ping(ping_id, failure=insert_failure, process_res=True):
                 success = False
                 reason = 'key_error'
                 fail_res = failure(
-                    ping,
+                    ping.alert,
                     reason,
                     res.status_code,
                     res.content.decode('utf-8'),
@@ -182,88 +183,28 @@ def process_ping(ping_id, failure=insert_failure, process_res=True):
                 success = False
                 reason = 'invalid_value'
                 fail_res = failure(
-                    ping,
+                    ping.alert,
                     reason,
                     res.status_code,
                     res.content.decode('utf-8'),
                     oncall_user
                 )
 
+    if (not process_res):
+        return res, reason
+
     diff = (end_time - start_time).total_seconds()
 
-    now = datetime.utcnow()
-    hour_date = datetime(
-        now.year, now.month, now.day,
-        now.hour, 0, 0
+    return process_result(
+        success,
+        ping.alert,
+        fail_res,
+        ping.name,
+        oncall_user,
+        diff=diff
     )
-    day_date = datetime(
-        now.year, now.month, now.day
-    )
-
-    if process_res:
-
-        # Increment Result Hour
-        result_hour = models.Result.objects.filter(
-            ping=ping,
-            result_type='hour',
-            result_date=hour_date
-        ).first()
-
-        if result_hour is None:
-            result_hour = models.Result(
-                ping=ping,
-                result_type='hour',
-                result_date=hour_date,
-                count=0,
-                success=0,
-                failure=0,
-                total_time=0
-            )
-
-        result_hour.count += 1
-        if success:
-            result_hour.success += 1
-        else:
-            result_hour.failure += 1
-
-        result_hour.total_time += diff
-        result_hour.save()
-
-        # Increment Result Day
-        result_day = models.Result.objects.filter(
-            ping=ping,
-            result_type='day',
-            result_date=day_date
-        ).first()
-
-        if result_day is None:
-            result_day = models.Result(
-                ping=ping,
-                result_type='day',
-                result_date=day_date,
-                count=0,
-                success=0,
-                failure=0,
-                total_time=0
-            )
-
-        result_day.count += 1
-        if success:
-            result_day.success += 1
-        else:
-            result_day.failure += 1
-
-        result_day.total_time += diff
-        result_day.save()
-
-        notification_check(
-            success, ping, result_day, fail_res, diff, oncall_user
-        )
-    else:
-
-        return res, reason
 
 
 if __name__ == '__main__':
 
-    process_ping(1)
+    process_ping(2)

@@ -1,21 +1,17 @@
-import json
-from api.models import Ping, Result
-from rest_framework import filters
-from api.base import AuthenticatedViewSet
-from rest_framework.permissions import BasePermission, AllowAny
-from rest_framework.permissions import AllowAny
-from rest_framework.serializers import ModelSerializer
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import status
-from rest_framework.response import Response
-from rest_framework.decorators import api_view, permission_classes
 from datetime import datetime, timedelta
-from tasks.pong import process_pong
-from api.models import Ping
-from api.tools import cache
-from oel.settings import SECS_BETWEEN_PONGS, PONG_DATA_MAX_LEN
 
-from api.serializers import PingSerializer
+from api.base import AuthenticatedViewSet
+from api.models import Alert, Pong, Result
+from api.serializers import PongSerializer
+from api.tools import cache
+from django_filters.rest_framework import DjangoFilterBackend
+from oel.settings import SECS_BETWEEN_PONGS
+from rest_framework import filters, status
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import (AllowAny, BasePermission,
+                                        IsAuthenticated)
+from rest_framework.response import Response
+from tasks.pong import process_pong
 
 
 class PongKeyPermission(BasePermission):
@@ -26,8 +22,8 @@ class PongKeyPermission(BasePermission):
             return False
 
         try:
-            ping = Ping.objects.get(push_key=xauth)
-        except Ping.DoesNotExist:
+            Pong.objects.get(push_key=xauth)
+        except Pong.DoesNotExist:
             return False
 
         return True
@@ -46,29 +42,100 @@ class PongPermission(BasePermission):
 
 
 class PongViewSet(AuthenticatedViewSet):
-    serializer_class = PingSerializer
+    serializer_class = PongSerializer
     filter_backends = [filters.SearchFilter,
                        DjangoFilterBackend, filters.OrderingFilter]
     permission_classes = [PongPermission]
 
-    model = Ping
+    model = Pong
     filterset_fields = []
     ordering_fields = ['created_on', 'updated_on']
 
+    def destroy(self, request, *args, **kwargs):
+
+        pong = Pong.objects.get(pk=kwargs['pk'])
+        pong.alert.delete()
+        pong.delete()
+
+        # TODO Delete Results and Failures
+
+        return Response(
+            {},
+            status=status.HTTP_200_OK
+        )
+
     def create(self, request, *args, **kwargs):
 
-        ping_data = request.data
-        ping_data['org'] = request.org.id
-        ping_data['direction'] = 'push'
+        pong_data = request.data
+        pong_data['org'] = request.org.id
+        pong_serializer = PongSerializer(
+            data=pong_data
+        )
 
-        return super().create(request, *args, **kwargs)
+        if not pong_serializer.is_valid():
+            return Response(
+                pong_serializer.errors,
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        pong_serializer.save()
+
+        pong = Pong.objects.get(id=pong_serializer.data['id'])
+        alert = Alert(
+            active=pong_data['active'],
+            notification_type=pong_data['notification_type'],
+            incident_interval=int(pong_data['incident_interval']),
+            callback_url=pong_data['callback_url'],
+            callback_username=pong_data['callback_username'],
+            callback_password=pong_data['callback_password'],
+            doc_link=pong_data['doc_link'],
+            org=request.org
+        )
+        alert.save()
+
+        pong.alert = alert
+        pong.save()
+
+        return Response(
+            pong_serializer.data,
+            status=status.HTTP_201_CREATED
+        )
 
     def update(self, request, *args, **kwargs):
-        ping_data = request.data
-        ping_data['org'] = request.org.id
-        ping_data['direction'] = 'push'
+        pong_data = request.data
+        pong_data['org'] = request.org.id
 
-        return super().update(request, *args, **kwargs)
+        pong_serializer = PongSerializer(
+            data=pong_data
+        )
+
+        if not pong_serializer.is_valid():
+            return Response(
+                pong_serializer.errors,
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        pong = Pong.objects.get(id=pong_data['id'])
+
+        pong.alert.active = pong_data['active']
+        pong.alert.notification_type = pong_data['notification_type']
+        pong.alert.incident_interval = int(pong_data['incident_interval'])
+        pong.alert.callback_url = pong_data['callback_url']
+        pong.alert.callback_username = pong_data['callback_username']
+        pong.alert.callback_password = pong_data['callback_password']
+        pong.alert.doc_link = pong_data['doc_link']
+        pong.alert.save()
+
+        for attr, value in pong_data.items():
+            if attr == 'org':
+                continue
+            setattr(pong, attr, value)
+        pong.save()
+
+        return Response(
+            PongSerializer(pong).data,
+            status=status.HTTP_200_OK
+        )
 
 
 @api_view(['POST', 'GET'])
@@ -86,30 +153,79 @@ def pongme(request, push_key):
 
     cache.set(cache_key, 1, expire=SECS_BETWEEN_PONGS)
 
-    # body = request.body.decode('utf-8', errors="ignore")
-
-    # if len(body) > PONG_DATA_MAX_LEN:
-    #     return Response(
-    #         {
-    #             'details': 'Data too big.  Max length is: %s' % PONG_DATA_MAX_LEN
-    #         },
-    #         status=status.HTTP_400_BAD_REQUEST
-    #     )
-
-    # data = None
-    # if body:
-    #     try:
-    #         data = json.loads(body)
-    #     except json.JSONDecodeError:
-    #         return Response(
-    #             {
-    #                 'details': 'Data must be valid JSON.  '
-    #                 'Use https://jsonlint.com/ to validate your JSON.',
-    #                 'data_received': body
-    #             },
-    #             status=status.HTTP_400_BAD_REQUEST
-    #         )
-
     res = process_pong(push_key)
 
     return Response({'notification_sent': res}, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def pong_details(request, id):
+    pong = Pong.objects.get(pk=id)
+
+    if not pong:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+    if pong.org.id != request.org.id:
+        return Response(status=status.HTTP_403_FORBIDDEN)
+
+    now = datetime.utcnow()
+    now = datetime(now.year, now.month, now.day)
+    ago = now - timedelta(days=359)
+
+    calendar = {
+        'start': ago.strftime('%Y-%m-%d'),
+        'end': now.strftime('%Y-%m-%d'),
+        'data': []
+    }
+    d = ago
+
+    calendar_data = {}
+    while d <= now:
+        calendar_data[d] = {
+            'date': d.strftime('%Y-%m-%d'),
+            'status': None,
+            'text': None
+        }
+        d += timedelta(days=1)
+
+    results = Result.objects.filter(
+        alert=pong.alert,
+        result_type='day',
+        result_date__gte=ago
+    ).order_by('result_date')
+
+    for res in results:
+        d = res.result_date
+        d = datetime(d.year, d.month, d.day)
+        status_msg = 'success'
+        status_text = 'Everything looks great today'
+
+        if res.success / res.count < 0.90:
+            status_msg = 'danger'
+            status_text = 'Many pongs failed on this day'
+        elif res.failure > 1:
+            status_msg = 'warning'
+            status_text = 'At least one failure on this day'
+
+        if res.count >= 5:
+            status_msg = 'danger'
+            status_text = 'Many pongs were triggered on this day'
+        elif res.count >= 1:
+            status_msg = 'warning'
+            status_text = 'One or more pongs were triggered on this day'
+
+        calendar_data[d]['status'] = status_msg
+        calendar_data[d]['text'] = status_text
+        calendar_data[d]['success'] = res.success
+        calendar_data[d]['failure'] = res.failure
+        calendar_data[d]['count'] = res.count
+        calendar_data[d]['success_rate'] = res.success / res.count
+
+    calendar['data'] = [
+        y for x, y in sorted(calendar_data.items(), key=lambda x: x[0])
+    ]
+
+    return Response({
+        'calendar': calendar
+    })

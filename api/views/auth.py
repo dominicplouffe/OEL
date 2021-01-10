@@ -1,5 +1,4 @@
 from rest_framework.decorators import api_view, permission_classes
-from django.contrib.auth.password_validation import validate_password
 from api.tools.generic_domains import generic_domains
 from oel.settings import ALLOW_GENERIC_EMAILS
 from django.contrib.auth.models import User
