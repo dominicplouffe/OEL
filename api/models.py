@@ -293,7 +293,8 @@ class Failure(models.Model):
         ('connection_error', 'Connection Error'),
         ('timeout_error', 'Timeout Error'),
         ('http_error', 'HTTP Error'),
-        ('receive_alert', 'Receive Alert')
+        ('receive_alert', 'Receive Alert'),
+        ('Metric triggered', 'Metric Triggered'),
     )
     ping = models.ForeignKey(
         Ping,
