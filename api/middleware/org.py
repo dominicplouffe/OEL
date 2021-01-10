@@ -1,5 +1,5 @@
 from django.utils.functional import SimpleLazyObject
-from api.models import OrgUser, Org
+from api.models import OrgUser
 
 
 def get_org(request):

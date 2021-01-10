@@ -4,11 +4,11 @@ from django.db.models import Q
 from datetime import datetime, timedelta
 
 
-def get_current_failure(ping):
+def get_current_failure(alert):
 
     try:
         fail = models.Failure.objects.get(
-            Q(ping=ping) &
+            Q(alert=alert) &
             # Q(acknowledged_on__isnull=True) &
             Q(fixed_on__isnull=True) &
             Q(ignored_on__isnull=True) &
@@ -21,21 +21,21 @@ def get_current_failure(ping):
         return None
 
 
-def recover_failure(ping):
+def recover_failure(alert):
 
-    fail = get_current_failure(ping)
+    fail = get_current_failure(alert)
 
     if fail:
         fail.recovered_on = datetime.utcnow()
         fail.save()
 
 
-def get_fail_stats(ping, hours):
+def get_fail_stats(alert, hours):
 
     now = datetime.now(pytz.UTC)
     ago = now - timedelta(hours=hours)
 
-    fails = models.Failure.objects.filter(created_on__gte=ago, ping=ping)
+    fails = models.Failure.objects.filter(created_on__gte=ago, alert=alert)
 
     stats = {
         'total_time': 0.00,
@@ -46,8 +46,6 @@ def get_fail_stats(ping, hours):
         'resolved': 0
     }
     for f in fails:
-        created_on = f.created_on
-
         if f.recovered_on is not None:
             stats['total_time'] += (
                 f.recovered_on - f.created_on

@@ -1,8 +1,6 @@
-import pytz
-from api.models import Ping, Result, Failure
+from api.models import Ping, Result, Failure, Alert
 from rest_framework import filters
 from api.base import AuthenticatedViewSet
-from api.common import failure
 from rest_framework.permissions import BasePermission
 from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
@@ -13,7 +11,7 @@ from tasks.ping import process_ping, insert_failure
 from django_celery_beat.models import PeriodicTask, IntervalSchedule
 from datetime import datetime, timedelta
 
-from api.serializers import PingSerializer, FailureSerializer
+from api.serializers import PingSerializer
 
 
 class PingPermission(BasePermission):
@@ -35,8 +33,21 @@ class PingViewSet(AuthenticatedViewSet):
     permission_classes = [PingPermission]
 
     model = Ping
-    filterset_fields = ['direction']
+    filterset_fields = []
     ordering_fields = ['created_on', 'updated_on']
+
+    def destroy(self, request, *args, **kwargs):
+
+        ping = Ping.objects.get(pk=kwargs['pk'])
+        ping.alert.delete()
+        ping.delete()
+
+        # TODO Delete Results and Failures
+
+        return Response(
+            {},
+            status=status.HTTP_200_OK
+        )
 
     def get_queryset(self, *args, **kwargs):
 
@@ -70,6 +81,22 @@ class PingViewSet(AuthenticatedViewSet):
 
         ping_serializer.save()
 
+        ping = Ping.objects.get(id=ping_serializer.data['id'])
+        alert = Alert(
+            active=ping_data['active'],
+            notification_type=ping_data['notification_type'],
+            incident_interval=int(ping_data['incident_interval']),
+            callback_url=ping_data['callback_url'],
+            callback_username=ping_data['callback_username'],
+            callback_password=ping_data['callback_password'],
+            doc_link=ping_data['doc_link'],
+            org=request.org
+        )
+        alert.save()
+
+        ping.alert = alert
+        ping.save()
+
         task.args = [ping_serializer.data['id']]
         task.save()
 
@@ -100,6 +127,15 @@ class PingViewSet(AuthenticatedViewSet):
         task_interval.enabled = ping_data['active']
         ping.task.interval = task_interval
 
+        ping.alert.active = ping_data['active']
+        ping.alert.notification_type = ping_data['notification_type']
+        ping.alert.incident_interval = int(ping_data['incident_interval'])
+        ping.alert.callback_url = ping_data['callback_url']
+        ping.alert.callback_username = ping_data['callback_username']
+        ping.alert.callback_password = ping_data['callback_password']
+        ping.alert.doc_link = ping_data['doc_link']
+        ping.alert.save()
+
         for attr, value in ping_data.items():
             if attr == 'org':
                 continue
@@ -111,152 +147,6 @@ class PingViewSet(AuthenticatedViewSet):
             PingSerializer(ping).data,
             status=status.HTTP_200_OK
         )
-
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def ping_summary(request, *args, **kwargs):
-
-    org = request.org
-    direction = request.GET.get('direction', 'pull')
-    hours = int(request.GET.get('hours', 24))
-
-    if 'id' in kwargs:
-        pings = Ping.objects.filter(
-            org=org,
-            id=kwargs['id'],
-            direction=direction
-        )
-    else:
-        pings = Ping.objects.filter(
-            org=org, direction=direction
-        ).order_by('created_on')
-
-    data = {
-        'total': len(pings),
-        'active': 0,
-        'paused': 0,
-        'up': 0,
-        'down': 0
-    }
-    ping_data = []
-
-    now = datetime.now(pytz.UTC)
-    now = datetime(now.year, now.month, now.day, now.hour)
-    ago = now - timedelta(hours=hours)
-
-    for ping in pings:
-        pd = {
-            'status': True,
-            'count': 0,
-            'success': 0,
-            'failure': 0,
-            'total_time': 0,
-            'avg_resp': 0.00,
-            'downtime': 0,
-            'downtime_s': '0m 0s',
-            'availability': 0.000,
-            'snapshot': {}
-        }
-
-        start = ago + timedelta(hours=1)
-        while start <= now:
-            pd['snapshot'][start] = {
-                'success': 0,
-                'failure': 0,
-                'count': 0,
-                'status': None,
-                'avg_res': 0,
-                'date': start
-            }
-            start += timedelta(hours=1)
-
-        if ping.failure_count > 0:
-            data['down'] += 1
-            pd['status'] = False
-        else:
-            data['up'] += 1
-
-        if ping.active:
-            data['active'] += 1
-        else:
-            data['paused'] += 1
-
-        results = Result.objects.filter(
-            ping=ping,
-            result_type='hour',
-            result_date__gte=ago
-        ).order_by('result_date')
-
-        pd['downtime'] = 0
-        pd['avg_resp'] = 0
-        pd['total_time'] = 0
-        pd['availability'] = 0
-
-        for res in results:
-            pd['count'] += res.count
-            pd['success'] += res.success
-            pd['failure'] += res.failure
-
-            if ping.direction == 'pull':
-                pd['downtime'] += ping.interval * res.failure * 60
-                pd['total_time'] += res.total_time
-                pd['avg_resp'] = pd['total_time'] / pd['count']
-                pd['availability'] = round(
-                    100*pd['success'] / pd['count'],
-                    2
-                )
-
-            pd['stats'] = failure.get_fail_stats(ping, hours)
-
-            downtime_hours = int(pd['downtime'] / 60 / 60)
-            downtime_minutes = int((
-                pd['downtime'] - (downtime_hours * 60 * 60)
-            ) / 60)
-
-            pd['downtime_s'] = '%sh %sm' % (downtime_hours, downtime_minutes)
-
-            res_date = res.result_date
-            res_date = datetime(
-                res_date.year, res_date.month, res_date.day, res_date.hour
-            )
-
-            if res_date in pd['snapshot']:
-                pd['snapshot'][res_date] = {
-                    'success': res.success,
-                    'failure': res.failure,
-                    'count': res.count,
-                    'status': None,
-                    'avg_res': res.total_time / res.count,
-                    'date': res_date
-                }
-                if res.count == res.success:
-                    pd['snapshot'][res_date]['status'] = 'success'
-                elif res.count == res.failure:
-                    pd['snapshot'][res_date]['status'] = 'danger'
-                else:
-                    pd['snapshot'][res_date]['status'] = 'warning'
-
-        pd['snapshot'] = [
-            y for x, y in sorted(pd['snapshot'].items(), key=lambda x: x[0])
-        ]
-
-        pd['ping'] = PingSerializer(ping).data
-        if not pd['status']:
-            fail = failure.get_current_failure(ping)
-            if fail:
-                pd['fail'] = FailureSerializer(fail).data
-
-        ping_data.append(pd)
-
-    ping_data = sorted(ping_data, key=lambda x: -x['ping']['active'])
-    return Response(
-        {
-            'totals': data,
-            'pings': ping_data
-        },
-        status=status.HTTP_200_OK
-    )
 
 
 @ api_view(['GET'])
@@ -302,7 +192,9 @@ def ping_details(request, id):
         return Response(status=status.HTTP_404_NOT_FOUND)
 
     if ping.org.id != request.org.id:
-        return Response(status=status.HTTP_403_FORBIDDEN)
+        return Response(
+            status=status.HTTP_403_FORBIDDEN
+        )
 
     now = datetime.utcnow()
     now = datetime(now.year, now.month, now.day)
@@ -325,7 +217,7 @@ def ping_details(request, id):
         d += timedelta(days=1)
 
     results = Result.objects.filter(
-        ping=ping,
+        alert=ping.alert,
         result_type='day',
         result_date__gte=ago
     ).order_by('result_date')
@@ -333,25 +225,17 @@ def ping_details(request, id):
     for res in results:
         d = res.result_date
         d = datetime(d.year, d.month, d.day)
-        status = 'success'
+        status_msg = 'success'
         status_text = 'Everything looks great today'
 
-        if ping.direction == 'pull':
-            if res.success / res.count < 0.90:
-                status = 'danger'
-                status_text = 'Many pings failed on this day'
-            elif res.failure > 1:
-                status = 'warning'
-                status_text = 'At least one failure on this day'
-        else:
-            if res.count >= 5:
-                status = 'danger'
-                status_text = 'Many pongs were triggered on this day'
-            elif res.count >= 1:
-                status = 'warning'
-                status_text = 'One or more pongs where triggered on this day'
+        if res.success / res.count < 0.90:
+            status_msg = 'danger'
+            status_text = 'Many pings failed on this day'
+        elif res.failure > 1:
+            status_msg = 'warning'
+            status_text = 'At least one failure on this day'
 
-        calendar_data[d]['status'] = status
+        calendar_data[d]['status'] = status_msg
         calendar_data[d]['text'] = status_text
         calendar_data[d]['success'] = res.success
         calendar_data[d]['failure'] = res.failure
@@ -427,9 +311,9 @@ def fix(request, id):
     fail.fixed_on = datetime.utcnow()
     fail.fixed_by = request.org_user
 
-    fail.ping.failure_count = 0
+    fail.alert.failure_count = 0
     fail.save()
-    fail.ping.save()
+    fail.alert.save()
 
     return Response(
         {},
@@ -452,9 +336,9 @@ def ignore(request, id):
     fail.ignored_on = datetime.utcnow()
     fail.ignored_by = request.org_user
 
-    fail.ping.failure_count = 0
+    fail.alert.failure_count = 0
     fail.save()
-    fail.ping.save()
+    fail.alert.save()
 
     return Response(
         {},

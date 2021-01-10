@@ -1,10 +1,12 @@
 from rest_framework.serializers import (
-    ModelSerializer, ReadOnlyField,  SerializerMethodField
+    ModelSerializer, ReadOnlyField, SerializerMethodField
 )
 from api.models import (
-    Org, OrgUser, Failure, PingHeader, Ping, Schedule, VitalInstance
+    Org, OrgUser, Failure, PingHeader, Ping, Schedule, VitalInstance, Alert,
+    Pong, MetricCondition
 )
 from django.contrib.auth.models import User
+from django.contrib.auth.password_validation import validate_password
 
 
 class OrgSerializer(ModelSerializer):
@@ -14,10 +16,28 @@ class OrgSerializer(ModelSerializer):
         fields = '__all__'
 
 
+class AlertSerializer(ModelSerializer):
+
+    class Meta:
+        model = Alert
+        fields = '__all__'
+
+
 class PingSerializer(ModelSerializer):
+
+    alert = AlertSerializer(read_only=True)
 
     class Meta:
         model = Ping
+        fields = '__all__'
+
+
+class PongSerializer(ModelSerializer):
+
+    alert = AlertSerializer(read_only=True)
+
+    class Meta:
+        model = Pong
         fields = '__all__'
 
 
@@ -87,7 +107,8 @@ class ChangePasswordSerializer(ModelSerializer):
         model = User
         fields = ['password']
 
-    def validate_password(self, password):
+    # TODO huh?
+    def _validate_password(self, password):
         user = self.context.get('user')
         validate_password(password, user)
         return password
@@ -97,4 +118,13 @@ class ScheduleSerializer(ModelSerializer):
 
     class Meta:
         model = Schedule
+        fields = '__all__'
+
+
+class MetricConditionSerializer(ModelSerializer):
+
+    alert = AlertSerializer(read_only=True)
+
+    class Meta:
+        model = MetricCondition
         fields = '__all__'

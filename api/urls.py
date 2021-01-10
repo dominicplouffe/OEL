@@ -3,14 +3,17 @@ from rest_framework_simplejwt import views as jwt_views
 from django.urls import path
 
 from api.views.ping import (
-    PingViewSet, ping_test, ping_summary, ping_details, ping_now,
+    PingViewSet, ping_test, ping_details, ping_now,
     fix, acknowledge, ignore
 )
 from api.views.pong import (
-    pongme, PongViewSet
+    pongme, PongViewSet, pong_details
 )
 from api.views.failure import FailureViewSet, failure_count
 from api.views.ping_header import PingHeaderViewSet
+from api.views.metric_condition import (
+    MetricConditionViewSet, metric_condition_details
+)
 from api.views.org_user import (
     OrgUserViewSet, send_invite, check_invite, finish_invite, resend_invite,
     update_user_order, send_notification_update
@@ -22,6 +25,7 @@ from api.views.auth import (
 )
 from api.views import dashboard
 from api.views import metrics
+from api.views import summary
 from api.views.vital_instance import VitalInstancegViewSet
 
 router = DefaultRouter()
@@ -31,6 +35,11 @@ router.register(r'org_user', OrgUserViewSet, basename='org_user')
 router.register(r'failure', FailureViewSet, basename='failure')
 router.register(r'ping_header', PingHeaderViewSet, basename='ping_header')
 router.register(r'org', OrgViewSet, basename='org')
+router.register(
+    r'metric_condition',
+    MetricConditionViewSet,
+    basename='metric_condition'
+)
 router.register(
     r'vital_instance',
     VitalInstancegViewSet,
@@ -86,17 +95,21 @@ urlpatterns = [
 
     # Pings
     path('ping-test/<int:id>/', ping_test, name='ping-test'),
-    path('ping/summary/', ping_summary, name='ping-summary'),
-    path('ping/summary/<int:id>/', ping_summary, name='ping-ind-summary'),
     path('ping/details/<int:id>/', ping_details, name='ping-ind-details'),
     path('ping/now/<int:id>/', ping_now, name='ping-now'),
 
     # Pongs
     path('pongme/<push_key>', pongme, name='pong-me'),
+    path('pong/details/<int:id>/', pong_details, name='pong-ind-details'),
 
     # Metics
     path('metrics/<api_key>', metrics.add_metrics, name="add-metrics"),
     path('metrics-sample', metrics.metric_sample, name="metric-sample"),
+    path(
+        'metric_condition/details/<int:id>/',
+        metric_condition_details,
+        name="metric_condition-details"
+    ),
 
     # Confirmation
     path('ping/acknowledge/<int:id>/', acknowledge, name='acknowledge'),
@@ -104,7 +117,24 @@ urlpatterns = [
     path('ping/ignore/<int:id>/', ignore, name='ignore'),
 
     # Failures and Incicents
-    path('failure/counts/<int:ping_id>/', failure_count, name='failure-count'),
+    path(
+        'failure/counts/<int:alert_id>/',
+        failure_count,
+        name='failure-count'
+    ),
+
+    # Summary
+    path(
+        'alert_summary/<str:object>/',
+        summary.summarizer,
+        name='alert-summary'
+    ),
+
+    path(
+        'alert_summary/<str:object>/<int:id>/',
+        summary.summarizer,
+        name='alert-summary-details'
+    ),
 
     # Dashboard
     path('dashboard', dashboard.index, name="index")

@@ -1,17 +1,12 @@
-from api.models import Failure, Ping
+from api.models import Failure, Alert
 from rest_framework import filters
 from api.base import AuthenticatedViewSet
-from api.views.org_user import OrgUserSerializer
 from rest_framework.permissions import BasePermission
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.serializers import ModelSerializer
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
-from tasks.ping import process_ping
-from django_celery_beat.models import PeriodicTask, IntervalSchedule
-from datetime import datetime, timedelta
 from collections import defaultdict
 
 from api.serializers import FailureSerializer
@@ -21,7 +16,7 @@ class FailurePermission(BasePermission):
 
     def has_object_permission(self, request, view, object):
 
-        if object.ping.org.id == request.org.id:
+        if object.alert.org.id == request.org.id:
             return True
 
         if request.user.is_superuser:
@@ -37,21 +32,21 @@ class FailureViewSet(AuthenticatedViewSet):
     permission_classes = [FailurePermission]
 
     model = Failure
-    filterset_fields = ['ping']
+    filterset_fields = ['alert']
     ordering_fields = ['created_on', 'status_code']
 
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def failure_count(request, ping_id):
+def failure_count(request, alert_id):
     org = request.org
 
     try:
-        ping = Ping.objects.get(org=org, pk=ping_id)
-    except Ping.DoesNotExist:
+        alert = Alert.objects.get(org=org, pk=alert_id)
+    except Alert.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
 
-    failures = Failure.objects.filter(ping=ping)
+    failures = Failure.objects.filter(alert=alert)
 
     counts = defaultdict(int)
     reasons = {x: y for x, y in Failure.REASON}

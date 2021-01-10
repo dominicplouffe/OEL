@@ -33,44 +33,52 @@ class VitalInstancegViewSet(AuthenticatedViewSet):
     def retrieve(self, request, pk=None):
         try:
             instance = VitalInstance.objects.get(pk=pk)
+            metric_name = request.GET.get('metric_name', None)
 
             instance = self.get_instance_details(
                 VitalInstanceSerializer(instance).data,
                 request.org
             )
 
-            cpu_graph = graph.get_graph_data(
-                'cpu',
-                {
-                    'category': 'cpu_percent',
-                    'identifier': instance['instance_id']
-                },
-                request.org,
-                since=24
-            )
-            mem_graph = graph.get_graph_data(
-                'mem',
-                {
-                    'category': 'memory_percent',
-                    'identifier': instance['instance_id']
-                },
-                request.org,
-                since=24
-            )
-            disk_graph = graph.get_graph_data(
-                'disk',
-                {
-                    'category': 'disk_percent',
-                    'partition': '/',
-                    'identifier': instance['instance_id']
-                },
-                request.org,
-                since=24
-            )
+            cpu_graph = None
+            mem_graph = None
+            disk_graph = None
 
-            instance['cpu_graph'] = cpu_graph
-            instance['mem_graph'] = mem_graph
-            instance['disk_graph'] = disk_graph
+            if metric_name is None or metric_name == 'cpu_percent.cpu':
+                cpu_graph = graph.get_graph_data(
+                    'cpu',
+                    {
+                        'category': 'cpu_percent',
+                        'identifier': instance['instance_id']
+                    },
+                    request.org,
+                    since=24
+                )
+            if metric_name is None or metric_name == 'memory_percent.mem':
+                mem_graph = graph.get_graph_data(
+                    'mem',
+                    {
+                        'category': 'memory_percent',
+                        'identifier': instance['instance_id']
+                    },
+                    request.org,
+                    since=24
+                )
+            if metric_name is None or metric_name == 'disk_percent.disk':
+                disk_graph = graph.get_graph_data(
+                    'disk',
+                    {
+                        'category': 'disk_percent',
+                        'partition': '/',
+                        'identifier': instance['instance_id']
+                    },
+                    request.org,
+                    since=24
+                )
+
+            instance['cpu_percent.cpu'] = cpu_graph
+            instance['memory_percent.mem'] = mem_graph
+            instance['disk_percent.disk'] = disk_graph
 
             return Response(
                 instance,
@@ -104,14 +112,16 @@ class VitalInstancegViewSet(AuthenticatedViewSet):
     def get_instance_details(self, instance, org):
         instance['cpu_percent'] = vitals.get_cpu_stats(
             instance['instance_id'],
-            org
+            org,
+            since=24
         )
         instance['cpu_status'] = get_gradient(int(
             instance['cpu_percent'] * 100)
         )
         instance['mem_percent'] = vitals.get_mem_stats(
             instance['instance_id'],
-            org
+            org,
+            since=24
         )
         instance['mem_status'] = get_gradient(int(
             instance['mem_percent'] * 100)
@@ -119,7 +129,8 @@ class VitalInstancegViewSet(AuthenticatedViewSet):
 
         instance['disk_percent'] = vitals.get_disk_stats(
             instance['instance_id'],
-            org
+            org,
+            since=24
         )
         instance['disk_status'] = get_gradient(int(
             instance['disk_percent'] * 100)
