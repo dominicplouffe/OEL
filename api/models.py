@@ -432,6 +432,7 @@ class MetricCondition(models.Model):
         on_delete=models.CASCADE,
         null=True
     )
+    name = models.CharField(max_length=256, null=True, blank=True)
     rule = models.JSONField()
     active = models.BooleanField(null=False)
 

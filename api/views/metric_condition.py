@@ -72,3 +72,29 @@ class MetricConditionViewSet(AuthenticatedViewSet):
             condition_data_serializer.data,
             status=status.HTTP_201_CREATED
         )
+
+    def update(self, request, *args, **kwargs):
+        condition_data = request.data
+
+        metric = MetricCondition.objects.get(
+            id=kwargs['pk']
+        )
+
+        metric.alert.active = condition_data['active']
+        metric.alert.notification_type = condition_data['notification_type']
+        metric.alert.incident_interval = condition_data['incident_interval']
+        metric.alert.callback_url = condition_data['callback_url']
+        metric.alert.callback_username = condition_data['callback_username']
+        metric.alert.callback_password = condition_data['callback_password']
+        metric.alert.doc_link = condition_data['doc_link']
+        metric.alert.save()
+
+        metric.active = condition_data['active']
+        metric.name = condition_data['name']
+        metric.rule = condition_data['rule']
+        metric.save()
+
+        return Response(
+            MetricConditionSerializer(metric).data,
+            status=status.HTTP_200_OK
+        )

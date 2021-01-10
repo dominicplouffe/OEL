@@ -122,6 +122,9 @@ class ScheduleSerializer(ModelSerializer):
 
 
 class MetricConditionSerializer(ModelSerializer):
+
+    alert = AlertSerializer(read_only=True)
+
     class Meta:
         model = MetricCondition
         fields = '__all__'
