@@ -65,7 +65,7 @@ def copy_code(ssh):
     ssh.exec_command('sudo cp -r tools /opt/oel')
     ssh.exec_command('sudo cp manage.py /opt/oel')
     ssh.exec_command('sudo cp requirements.txt /opt/oel')
-    ssh.exec_command('PYTHONPATH=/opt/oel python3 /opt/oel/manage.py migrate')
+    # ssh.exec_command('PYTHONPATH=/opt/oel python3 /opt/oel/manage.py migrate')
     ssh.exec_command('sudo systemctl restart oel')
     ssh.exec_command('sudo systemctl restart oelsup')
 
