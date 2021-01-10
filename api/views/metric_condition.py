@@ -1,11 +1,13 @@
-from api.models import MetricCondition, VitalInstance, Alert
+from api.models import MetricCondition, VitalInstance, Alert, Result
 from rest_framework import filters
-from rest_framework.permissions import BasePermission
+from rest_framework.permissions import BasePermission, IsAuthenticated
 from api.base import AuthenticatedViewSet
 from django_filters.rest_framework import DjangoFilterBackend
 from api.serializers import MetricConditionSerializer
 from rest_framework import status
 from rest_framework.response import Response
+from rest_framework.decorators import api_view, permission_classes
+from datetime import datetime, timedelta
 
 
 class MetricConditionPermission(BasePermission):
@@ -98,3 +100,76 @@ class MetricConditionViewSet(AuthenticatedViewSet):
             MetricConditionSerializer(metric).data,
             status=status.HTTP_200_OK
         )
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def metric_condition_details(request, id):
+    metric = MetricCondition.objects.get(pk=id)
+
+    if not metric:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+    if metric.org.id != request.org.id:
+        return Response(status=status.HTTP_403_FORBIDDEN)
+
+    now = datetime.utcnow()
+    now = datetime(now.year, now.month, now.day)
+    ago = now - timedelta(days=359)
+
+    calendar = {
+        'start': ago.strftime('%Y-%m-%d'),
+        'end': now.strftime('%Y-%m-%d'),
+        'data': []
+    }
+    d = ago
+
+    calendar_data = {}
+    while d <= now:
+        calendar_data[d] = {
+            'date': d.strftime('%Y-%m-%d'),
+            'status': None,
+            'text': None
+        }
+        d += timedelta(days=1)
+
+    results = Result.objects.filter(
+        alert=metric.alert,
+        result_type='day',
+        result_date__gte=ago
+    ).order_by('result_date')
+
+    for res in results:
+        d = res.result_date
+        d = datetime(d.year, d.month, d.day)
+        status_msg = 'success'
+        status_text = 'Everything looks great today'
+
+        if res.success / res.count < 0.90:
+            status_msg = 'danger'
+            status_text = 'Your condition failed many times on this day'
+        elif res.failure > 1:
+            status_msg = 'warning'
+            status_text = 'At least one failure on this day'
+
+        if res.count >= 5:
+            status_msg = 'danger'
+            status_text = 'Many conditions were triggered on this day'
+        elif res.count >= 1:
+            status_msg = 'warning'
+            status_text = 'One or more condition were triggered on this day'
+
+        calendar_data[d]['status'] = status_msg
+        calendar_data[d]['text'] = status_text
+        calendar_data[d]['success'] = res.success
+        calendar_data[d]['failure'] = res.failure
+        calendar_data[d]['count'] = res.count
+        calendar_data[d]['success_rate'] = res.success / res.count
+
+    calendar['data'] = [
+        y for x, y in sorted(calendar_data.items(), key=lambda x: x[0])
+    ]
+
+    return Response({
+        'calendar': calendar
+    })

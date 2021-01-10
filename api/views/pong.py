@@ -213,7 +213,7 @@ def pong_details(request, id):
             status_text = 'Many pongs were triggered on this day'
         elif res.count >= 1:
             status_msg = 'warning'
-            status_text = 'One or more pongs where triggered on this day'
+            status_text = 'One or more pongs were triggered on this day'
 
         calendar_data[d]['status'] = status_msg
         calendar_data[d]['text'] = status_text

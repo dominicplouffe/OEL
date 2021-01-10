@@ -11,7 +11,9 @@ from api.views.pong import (
 )
 from api.views.failure import FailureViewSet, failure_count
 from api.views.ping_header import PingHeaderViewSet
-from api.views.metric_condition import MetricConditionViewSet
+from api.views.metric_condition import (
+    MetricConditionViewSet, metric_condition_details
+)
 from api.views.org_user import (
     OrgUserViewSet, send_invite, check_invite, finish_invite, resend_invite,
     update_user_order, send_notification_update
@@ -103,6 +105,11 @@ urlpatterns = [
     # Metics
     path('metrics/<api_key>', metrics.add_metrics, name="add-metrics"),
     path('metrics-sample', metrics.metric_sample, name="metric-sample"),
+    path(
+        'metric_condition/details/<int:id>/',
+        metric_condition_details,
+        name="metric_condition-details"
+    ),
 
     # Confirmation
     path('ping/acknowledge/<int:id>/', acknowledge, name='acknowledge'),
