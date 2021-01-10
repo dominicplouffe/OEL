@@ -9,6 +9,9 @@ from api.views.ping import (
 from api.views.pong import (
     pongme, PongViewSet
 )
+from api.views.heartbeat import (
+    keep_alive, HeartBeatViewSet
+)
 from api.views.failure import FailureViewSet, failure_count
 from api.views.ping_header import PingHeaderViewSet
 from api.views.org_user import (
@@ -27,6 +30,7 @@ from api.views.vital_instance import VitalInstancegViewSet
 router = DefaultRouter()
 router.register(r'ping', PingViewSet, basename='ping')
 router.register(r'pong', PongViewSet, basename='pong')
+router.register(r'heartbeat', HeartBeatViewSet, basename='heartbeat')
 router.register(r'org_user', OrgUserViewSet, basename='org_user')
 router.register(r'failure', FailureViewSet, basename='failure')
 router.register(r'ping_header', PingHeaderViewSet, basename='ping_header')
@@ -93,6 +97,9 @@ urlpatterns = [
 
     # Pongs
     path('pongme/<push_key>', pongme, name='pong-me'),
+
+    # Heartbeats
+    path('keepalive/<push_key>', keep_alive, name='keep-alive'),
 
     # Metics
     path('metrics/<api_key>', metrics.add_metrics, name="add-metrics"),

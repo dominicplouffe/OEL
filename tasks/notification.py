@@ -1,4 +1,4 @@
-import pytz
+import pytz, json
 import requests
 from api.tools import mail, text
 from api import models
@@ -54,8 +54,9 @@ def notification_check(
                     ping.notified_on = datetime.utcnow()
 
                     template_name = "ping_failure.html"
-
-                    if ping.direction == "push":
+                    if ping.heartbeat:
+                        template_name = "heartbeat_failure.html"
+                    elif ping.direction == "push":
                         template_name = "pong_failure.html"
 
                     mail.send_html_mail(
@@ -73,6 +74,11 @@ def notification_check(
 
                     if ping.direction == "pull":
                         text.send_ping_failure(
+                            org_user.phone_number, ping.name, ping.doc_link,
+                            fail_res
+                        )
+                    elif ping.heartbeat:
+                        text.send_heartbeat_failure(
                             org_user.phone_number, ping.name, ping.doc_link,
                             fail_res
                         )

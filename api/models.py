@@ -2,7 +2,7 @@ from datetime import datetime
 
 from django.db import models
 from django.contrib.auth.models import User
-from django_celery_beat.models import PeriodicTask
+from django_celery_beat.models import PeriodicTask, IntervalSchedule
 
 # Create your models here.
 
@@ -96,7 +96,9 @@ class Ping(models.Model):
         default='pull',
         choices=DIRECTION
     )
-
+    heartbeat = models.BooleanField(
+        default=False
+    )
     notification_type = models.CharField(
         max_length=20,
         null=False,
@@ -123,7 +125,11 @@ class Ping(models.Model):
     endpoint_username = models.CharField(max_length=255, null=True, blank=True)
     endpoint_password = models.CharField(max_length=255, null=True, blank=True)
     interval = models.IntegerField(null=True, blank=True)
-
+    period = models.CharField(
+        max_length=24,
+        choices=IntervalSchedule.PERIOD_CHOICES,
+        default='minutes'
+    )
     task = models.ForeignKey(
         PeriodicTask,
         null=True,
@@ -142,8 +148,11 @@ class Ping(models.Model):
     expected_string = models.CharField(max_length=1000, null=True, blank=True)
     expected_value = models.CharField(max_length=1000, null=True, blank=True)
 
-    # Pong Settings
+    # Pong and Heartbeat Settings
     push_key = models.CharField(max_length=255, null=True, blank=True)
+
+    # Heartbeat Settings
+    last_heartbeat = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return '{0}({1})'.format(

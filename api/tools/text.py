@@ -69,3 +69,19 @@ def send_pong_failure(phone_number, ping_name, doc_link, fail_res):
         phone_number,
         body
     )
+
+
+def send_heartbeat_failure(phone_number, ping_name, doc_link, fail_res):
+
+    body = "OnErrorLog Failure : %s - We failed to receive a heartbeat. " % ping_name
+    body += "Please login to onErrorLog and check it out."
+
+    body += "\n\nhttps://app.onerrorlog.com/failure/%s/" % fail_res.id
+
+    if doc_link and doc_link.startswith('http'):
+        body += "\n\nDocumentation: %s" % doc_link
+
+    sent_text_message(
+        phone_number,
+        body
+    )

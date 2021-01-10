@@ -47,8 +47,9 @@ class PingViewSet(AuthenticatedViewSet):
         ping_data = request.data
         ping_data['org'] = request.org.id
 
-        task_interval = IntervalSchedule.objects.get(
-            every=ping_data['interval']
+        task_interval, _ = IntervalSchedule.objects.get_or_create(
+            every=ping_data['interval'],
+            period=IntervalSchedule.MINUTES  # todo: pull from period data when front end starts passing default
         )
         task = PeriodicTask(
             name=ping_data['name'],
@@ -94,8 +95,9 @@ class PingViewSet(AuthenticatedViewSet):
             )
 
         ping = Ping.objects.get(id=ping_data['id'])
-        task_interval = IntervalSchedule.objects.get(
-            every=ping_data['interval']
+        task_interval, _ = IntervalSchedule.objects.get_or_create(
+            every=ping_data['interval'],
+            period=IntervalSchedule.MINUTES  # todo: pull from period data when front end starts passing default
         )
         task_interval.enabled = ping_data['active']
         ping.task.interval = task_interval
@@ -119,17 +121,21 @@ def ping_summary(request, *args, **kwargs):
 
     org = request.org
     direction = request.GET.get('direction', 'pull')
+    heartbeat = request.GET.get('heartbeat', False)
     hours = int(request.GET.get('hours', 24))
 
     if 'id' in kwargs:
         pings = Ping.objects.filter(
             org=org,
             id=kwargs['id'],
-            direction=direction
+            direction=direction,
+            heartbeat=heartbeat
         )
     else:
         pings = Ping.objects.filter(
-            org=org, direction=direction
+            org=org,
+            direction=direction,
+            heartbeat=heartbeat
         ).order_by('created_on')
 
     data = {
