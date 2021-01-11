@@ -1,7 +1,7 @@
 from rest_framework import filters
 from rest_framework.permissions import AllowAny
 from django_filters.rest_framework import DjangoFilterBackend
-from django_celery_beat.models import PeriodicTask, IntervalSchedule, CrontabSchedule
+from django_celery_beat.models import PeriodicTask, CrontabSchedule
 
 from api.base import AuthenticatedViewSet
 from api.models import Ping
@@ -48,9 +48,9 @@ class HeartBeatViewSet(AuthenticatedViewSet):
         ping_data['direction'] = 'push'
         ping_data['heartbeat'] = True
 
-        # todo: fix the cron schedule input
-        task_crontab = CrontabSchedule.objects.get_or_create(
-            minute="*/5"  # ping_data['interval']
+        cron = dict(zip(Ping.CRON_SETTING, ping_data['cron'].split()))
+        task_crontab, _ = CrontabSchedule.objects.get_or_create(
+            **cron
         )
 
         task = PeriodicTask(
@@ -98,10 +98,10 @@ class HeartBeatViewSet(AuthenticatedViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # todo: fix the cron schedule input
         ping = Ping.objects.get(id=ping_data['id'])
-        task_crontab = CrontabSchedule.objects.get_or_create(
-            minute="*/5"  # ping_data['interval']
+        cron = dict(zip(Ping.CRON_SETTING, ping_data['cron'].split()))
+        task_crontab, _ = CrontabSchedule.objects.get_or_create(
+            **cron
         )
 
         ping.task.enabled = ping_data['active']
