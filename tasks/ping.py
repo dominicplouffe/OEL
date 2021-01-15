@@ -147,6 +147,7 @@ def process_ping(ping_id, failure=insert_failure, process_res=True):
                 content_value = '%s' % content
                 content_value = content_value.lower()
                 if content_value != ping.expected_value.lower():
+                    success = False
                     reason = 'value_error'
                     fail_res = failure(
                         ping.alert,
@@ -207,4 +208,4 @@ def process_ping(ping_id, failure=insert_failure, process_res=True):
 
 if __name__ == '__main__':
 
-    process_ping(2)
+    process_ping(13)
