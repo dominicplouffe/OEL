@@ -99,7 +99,7 @@ urlpatterns = [
     path('ping/now/<int:id>/', ping_now, name='ping-now'),
 
     # Pongs
-    path('pongme/<push_key>', pongme, name='pong-me'),
+    path('pongme/<pos>/<push_key>', pongme, name='pong-me'),
     path('pong/details/<int:id>/', pong_details, name='pong-ind-details'),
 
     # Metics

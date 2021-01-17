@@ -12,7 +12,8 @@ app = Celery(
         # 'api.common.email_notification',
         'tasks.ping',
         'tasks.schedule',
-        'tasks.metric'
+        'tasks.metric',
+        'tasks.pong'
     ],
     task_routes={
         'tasks.ping': {'queue': 'ping'}

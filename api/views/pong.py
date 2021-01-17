@@ -12,6 +12,7 @@ from rest_framework.permissions import (AllowAny, BasePermission,
                                         IsAuthenticated)
 from rest_framework.response import Response
 from tasks.pong import process_pong
+from django_celery_beat.models import PeriodicTask, IntervalSchedule
 
 
 class PongKeyPermission(BasePermission):
@@ -68,6 +69,18 @@ class PongViewSet(AuthenticatedViewSet):
 
         pong_data = request.data
         pong_data['org'] = request.org.id
+
+        task_interval = IntervalSchedule.objects.get(
+            every=5
+        )
+        task = PeriodicTask(
+            name=pong_data['name'],
+            task='tasks.ping.process_ping',
+            interval=task_interval
+        )
+        task.save()
+        pong_data['task'] = task.id
+
         pong_serializer = PongSerializer(
             data=pong_data
         )
@@ -140,20 +153,21 @@ class PongViewSet(AuthenticatedViewSet):
 
 @api_view(['POST', 'GET'])
 @permission_classes([AllowAny])
-def pongme(request, push_key):
+def pongme(request, pos, push_key):
 
-    cache_key = 'xauth-req-%s' % push_key
-    if cache.get(cache_key):
-        return Response(
-            {
-                'details': 'Too many requests'
-            },
-            status=status.HTTP_429_TOO_MANY_REQUESTS
-        )
+    # TODO
+    # cache_key = 'xauth-req-%s' % push_key
+    # if cache.get(cache_key):
+    #     return Response(
+    #         {
+    #             'details': 'Too many requests'
+    #         },
+    #         status=status.HTTP_429_TOO_MANY_REQUESTS
+    #     )
 
-    cache.set(cache_key, 1, expire=SECS_BETWEEN_PONGS)
+    # cache.set(cache_key, 1, expire=SECS_BETWEEN_PONGS)
 
-    res = process_pong(push_key)
+    res = process_pong(pos, push_key)
 
     return Response({'notification_sent': res}, status=status.HTTP_200_OK)
 
