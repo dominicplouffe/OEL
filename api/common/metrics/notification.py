@@ -63,6 +63,8 @@ def check_notification_rule(
             condition.alert,
             fail_res,
             '%s.%s' % (rule['category'], rule['metric']),
+            'metric',
+            condition.instance.id,
             oncall_user
         )
 
