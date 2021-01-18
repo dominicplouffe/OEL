@@ -13,6 +13,7 @@ app = Celery(
         'tasks.ping',
         'tasks.schedule',
         'tasks.heartbeat'
+        'tasks.metric'
     ],
     task_routes={
         'tasks.ping': {'queue': 'ping'},
