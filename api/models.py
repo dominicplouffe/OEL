@@ -88,6 +88,8 @@ class Ping(models.Model):
         ('pull', 'Pull')
     )
 
+    CRON_SETTING = ["minute", "hour", "day_of_week", "day_of_month", "month_of_year"]
+
     org = models.ForeignKey(Org, on_delete=models.CASCADE, null=False)
     name = models.CharField(max_length=30, null=False, blank=False)
     doc_link = models.CharField(max_length=255, null=True, blank=True)
@@ -152,6 +154,8 @@ class Ping(models.Model):
     push_key = models.CharField(max_length=255, null=True, blank=True)
 
     # Heartbeat Settings
+    alive = models.BooleanField(default=True)
+    cron = models.CharField(max_length=100, null=True, blank=True)
     last_heartbeat = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
