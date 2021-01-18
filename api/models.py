@@ -103,11 +103,24 @@ class Alert(models.Model):
 
 
 class Pong(models.Model):
+
     org = models.ForeignKey(Org, on_delete=models.CASCADE, null=False)
     name = models.CharField(max_length=30, null=False, blank=False)
     active = models.BooleanField(default=True)
 
     push_key = models.CharField(max_length=255, null=True, blank=True)
+    cron_desc = models.CharField(max_length=255, null=True, blank=True)
+
+    task = models.ForeignKey(
+        PeriodicTask,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE
+    )
+
+    last_start_on = models.DateTimeField(null=True, blank=True)
+    last_start_check = models.DateTimeField(null=True, blank=True)
+    last_complete_on = models.DateTimeField(null=True, blank=True)
 
     alert = models.ForeignKey(
         Alert,
@@ -124,6 +137,43 @@ class Pong(models.Model):
             self.org.name,
             self.name
         )
+
+
+class PongTrigger(models.Model):
+    TRIGGER_TYPE = (
+        ('complete_not_triggered_in', 'Complete not triggered'),
+        ('start_not_triggered_in', 'Start not triggered'),
+        ('heartbeat_triggered', 'Heartbeat has been triggered'),
+        ('runs_less_than', 'Runs less than'),
+        ('runs_more_than', 'Runs more than')
+    )
+
+    TRIGGER_UNITS = (
+        ('seconds', 'Seconds'),
+        ('minutes', 'Minutes'),
+        ('days', 'Days'),
+    )
+
+    trigger_type = models.CharField(
+        max_length=50,
+        null=False,
+        blank=False,
+        choices=TRIGGER_TYPE
+    )
+    interval_value = models.IntegerField(null=True, blank=True)
+    unit = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        choices=TRIGGER_UNITS
+    )
+    pong = models.ForeignKey(
+        Pong,
+        on_delete=models.CASCADE,
+        null=False
+    )
+    created_on = models.DateTimeField(default=datetime.now)
+    updated_on = models.DateTimeField(auto_now=True)
 
 
 class Ping(models.Model):
@@ -275,13 +325,13 @@ class Result(models.Model):
     created_on = models.DateTimeField(default=datetime.now)
     updated_on = models.DateTimeField(auto_now=True)
 
-    def __str__(self):
-        return '{0} - {1} - {2} - {3}'.format(
-            self.ping.org.name,
-            self.ping.name,
-            self.result_type,
-            self.result_date.strftime('%Y-%m-%d %H:00')
-        )
+    # def __str__(self):
+    #     return '{0} - {1} - {2} - {3}'.format(
+    #         self.ping.org.name,
+    #         self.ping.name,
+    #         self.result_type,
+    #         self.result_date.strftime('%Y-%m-%d %H:00')
+    #     )
 
 
 class Failure(models.Model):
@@ -295,6 +345,12 @@ class Failure(models.Model):
         ('http_error', 'HTTP Error'),
         ('receive_alert', 'Receive Alert'),
         ('Metric triggered', 'Metric Triggered'),
+        ('start_not_triggered', 'Heartbeat Start'),
+        ('comp_not_triggered', 'Heartbeat Complete'),
+        ('heartbeat_triggered', 'Heartbeat has been triggered'),
+        ('runs_less_than', 'Runs less than'),
+        ('runs_more_than', 'Runs more than')
+
     )
     ping = models.ForeignKey(
         Ping,
