@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 
 from api.base import AuthenticatedViewSet
-from api.models import Alert, Pong, Result
+from api.models import Alert, Pong, Result, PongTrigger
 from api.serializers import PongSerializer
 from api.tools import cache
 from django_filters.rest_framework import DjangoFilterBackend
@@ -12,6 +12,8 @@ from rest_framework.permissions import (AllowAny, BasePermission,
                                         IsAuthenticated)
 from rest_framework.response import Response
 from tasks.pong import process_pong
+from django_celery_beat.models import PeriodicTask, IntervalSchedule
+from croniter import CroniterBadCronError, croniter
 
 
 class PongKeyPermission(BasePermission):
@@ -32,9 +34,6 @@ class PongKeyPermission(BasePermission):
 class PongPermission(BasePermission):
 
     def has_object_permission(self, request, view, object):
-        if request.user.is_superuser:
-            return True
-
         if object.org.id == request.org.id:
             return True
 
@@ -68,6 +67,18 @@ class PongViewSet(AuthenticatedViewSet):
 
         pong_data = request.data
         pong_data['org'] = request.org.id
+
+        task_interval = IntervalSchedule.objects.get(
+            every=5
+        )
+        task = PeriodicTask(
+            name=pong_data['name'],
+            task='tasks.pong.process_pong_alert',
+            interval=task_interval
+        )
+        task.save()
+        pong_data['task'] = task.id
+
         pong_serializer = PongSerializer(
             data=pong_data
         )
@@ -95,6 +106,18 @@ class PongViewSet(AuthenticatedViewSet):
 
         pong.alert = alert
         pong.save()
+
+        task.args = [pong_serializer.data['id']]
+        task.save()
+
+        for t in pong_data['triggers']:
+            newt = PongTrigger(
+                trigger_type=t['trigger_type'],
+                interval_value=int(t['interval_value']),
+                unit=t['unit'],
+                pong=pong
+            )
+            newt.save()
 
         return Response(
             pong_serializer.data,
@@ -132,17 +155,40 @@ class PongViewSet(AuthenticatedViewSet):
             setattr(pong, attr, value)
         pong.save()
 
+        for t in pong_data['triggers']:
+            if t['id']:
+                newt = PongTrigger.objects.get(id=t['id'])
+                if not t['is_delete']:
+                    newt.trigger_type = t['trigger_type']
+                    newt.interval_value = t['interval_value']
+                    newt.unit = t['unit']
+                    newt.save()
+                else:
+                    newt.delete()
+            if not t['id']:
+                newt = PongTrigger(
+                    trigger_type=t['trigger_type'],
+                    interval_value=int(t['interval_value']),
+                    unit=t['unit'],
+                    pong=pong
+                )
+                newt.save()
+
         return Response(
             PongSerializer(pong).data,
             status=status.HTTP_200_OK
         )
 
+    def get_queryset(self):
+
+        return Pong.objects.filter(org=self.request.org)
+
 
 @api_view(['POST', 'GET'])
 @permission_classes([AllowAny])
-def pongme(request, push_key):
+def pongme(request, pos, push_key):
 
-    cache_key = 'xauth-req-%s' % push_key
+    cache_key = 'xauth-req-%s-%s' % (push_key, pos)
     if cache.get(cache_key):
         return Response(
             {
@@ -153,9 +199,31 @@ def pongme(request, push_key):
 
     cache.set(cache_key, 1, expire=SECS_BETWEEN_PONGS)
 
-    res = process_pong(push_key)
+    res = process_pong(pos, push_key)
 
     return Response({'notification_sent': res}, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def validate_cron(request):
+
+    cron = request.data.get('cron', '')
+
+    try:
+        ex = croniter.expand(cron)[0]
+
+        return Response(
+            {'data': ex},
+            status=status.HTTP_200_OK
+        )
+
+    except CroniterBadCronError:
+
+        return Response(
+            {'error': 'Invalid Cron'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
 
 
 @api_view(['GET'])

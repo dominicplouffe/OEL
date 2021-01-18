@@ -39,31 +39,14 @@ def send_ping_success(phone_number, ping_name):
     )
 
 
-def send_ping_failure(phone_number, ping_name, doc_link, fail_res):
+def send_failure(phone_number, ping_name, doc_link, fail_res):
 
-    body = "OnErrorLog Failure : %s - We could not ping your" % ping_name
+    body = "OnErrorLog Failure : %s - Your monitor has triggered" % ping_name
     body += " enpoint. Please login to onErrorLog and check it out."
     body += " - https://app.onerrorlog.com/failure/%s/" % fail_res.id
 
     if doc_link and doc_link.startswith('http'):
         body += " - Documentation: %s" % doc_link
-
-    sent_text_message(
-        phone_number,
-        body
-    )
-
-
-def send_pong_failure(phone_number, ping_name, doc_link, fail_res):
-
-    body = "OnErrorLog Failure : %s - We received a notification. " % ping_name
-    body += "One of your Pongs seems to be down.  "
-    body += "Please login to onErrorLog and check it out."
-
-    body += "\n\nhttps://app.onerrorlog.com/failure/%s/" % fail_res.id
-
-    if doc_link and doc_link.startswith('http'):
-        body += "\n\nDocumentation: %s" % doc_link
 
     sent_text_message(
         phone_number,

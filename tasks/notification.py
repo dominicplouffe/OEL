@@ -14,8 +14,9 @@ def notification_check(
     fail_res,
     response_time,
     org_user,
-    direction,
-    name
+    name,
+    obj_name,
+    obj_id,
 ):
 
     notification_sent = False
@@ -59,9 +60,6 @@ def notification_check(
 
                     template_name = "ping_failure.html"
 
-                    if direction == "push":
-                        template_name = "pong_failure.html"
-
                     mail.send_html_mail(
                         org_user.email_address,
                         "OnErrorLog Failure : %s " % name,
@@ -69,25 +67,19 @@ def notification_check(
                         {
                             'title': "OnErrorLog Failure : %s " % name,
                             'doc_link': alert.doc_link,
-                            'failure_id': fail_res.id
+                            'failure_id': fail_res.id,
+                            'obj_name': obj_name,
+                            'obj_id': obj_id
                         }
                     )
                 else:
                     alert.notified_on = datetime.utcnow()
 
-                    if direction == "pull":
-                        text.send_ping_failure(
-                            org_user.phone_number, name,
-                            alert.doc_link,
-                            fail_res
-                        )
-                    else:
-                        text.send_pong_failure(
-                            org_user.phone_number,
-                            name,
-                            alert.doc_link,
-                            fail_res
-                        )
+                    text.send_failure(
+                        org_user.phone_number, name,
+                        alert.doc_link,
+                        fail_res
+                    )
             else:
                 # TODO
                 send_callback(alert, fail_res, response_time, 'failure')
