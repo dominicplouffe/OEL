@@ -27,7 +27,10 @@ def process_pong(pos, push_key):
     if not pong.active:
         return False
 
+    oncall_user = schedule.get_on_call_user(pong.org)
     reason = 'receive_alert'
+    success = True
+    fail_res = None
 
     if pos == 'start':
         pong.last_start_on = datetime.utcnow()
@@ -54,31 +57,21 @@ def process_pong(pos, push_key):
             m.save()
             pong.last_start_check = pong.last_start_on
 
+            process_result(
+                False,
+                pong.alert,
+                fail_res,
+                pong.name,
+                oncall_user,
+                diff=diff.total_seconds()
+            )
+
     pong.save()
 
     return {
         'sent': True,
         'pos': pos
     }
-
-    # oncall_user = schedule.get_on_call_user(pong.org)
-
-    # fail_res = insert_failure(
-    #     pong.alert,
-    #     "receive_alert",
-    #     500,
-    #     "",
-    #     oncall_user
-    # )
-
-    # return process_result(
-    #     False,
-    #     pong.alert,
-    #     fail_res,
-    #     pong.name,
-    #     oncall_user
-    # )
-    return True
 
 
 @app.task
@@ -114,7 +107,13 @@ def start_not_triggered_in(trigger, pong, oncall_user):
 
     diff = datetime.now(pytz.UTC) - pong.last_start_on
 
-    if (diff.total_seconds() > trigger.interval_value):
+    interval_value = trigger.interval_value
+    if trigger.unit == "minutes":
+        trigger_value = trigger_value * 60
+    elif trigger.unit == "days":
+        trigger_value = trigger_value * 60 * 24
+
+    if (diff.total_seconds() > interval_value):
 
         reason = 'start_not_triggered'
 
@@ -147,7 +146,13 @@ def complete_not_triggered_in(trigger, pong, oncall_user):
 
     print('complete_not_triggered_in: %s' % diff)
 
-    if (diff.total_seconds() > trigger.interval_value):
+    interval_value = trigger.interval_value
+    if trigger.unit == "minutes":
+        trigger_value = trigger_value * 60
+    elif trigger.unit == "days":
+        trigger_value = trigger_value * 60 * 24
+
+    if (diff.total_seconds() > interval_value):
 
         reason = 'comp_not_triggered'
 
