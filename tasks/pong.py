@@ -137,6 +137,20 @@ def complete_not_triggered_in(trigger, pong, oncall_user):
     return None
 
 
+def heartbeat_triggered(trigger, pong, oncall_user):
+    reason = 'heartbeat_triggered'
+
+    fail_res = insert_failure(
+        pong.alert,
+        reason,
+        500,
+        "Hearbeat was triggered from your task",
+        oncall_user
+    )
+
+    return fail_res
+
+
 def process_pong(pos, push_key):
 
     pong = models.Pong.objects.filter(
@@ -151,13 +165,23 @@ def process_pong(pos, push_key):
         return False
 
     oncall_user = schedule.get_on_call_user(pong.org)
-    reason = 'receive_alert'
     success = True
     fail_res = None
     sent = False
 
     if pos == 'start':
         pong.last_start_on = datetime.utcnow()
+    elif pos == 'fail':
+        try:
+            trigger = models.PongTrigger.objects.get(
+                pong_id=pong.id,
+                trigger_type='heartbeat_triggered'
+            )
+            fail_res = heartbeat_triggered(trigger, pong, oncall_user)
+            sent = True
+        except models.PongTrigger.DoesNotExist:
+            pass
+
     elif pos == 'end':
         pong.last_complete_on = datetime.utcnow()
 

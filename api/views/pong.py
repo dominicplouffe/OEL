@@ -113,7 +113,7 @@ class PongViewSet(AuthenticatedViewSet):
         for t in pong_data['triggers']:
             newt = PongTrigger(
                 trigger_type=t['trigger_type'],
-                interval_value=int(t['interval']),
+                interval_value=int(t['interval_value']),
                 unit=t['unit'],
                 pong=pong
             )
@@ -168,7 +168,7 @@ class PongViewSet(AuthenticatedViewSet):
             if not t['id']:
                 newt = PongTrigger(
                     trigger_type=t['trigger_type'],
-                    interval_value=int(t['interval']),
+                    interval_value=int(t['interval_value']),
                     unit=t['unit'],
                     pong=pong
                 )
