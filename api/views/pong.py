@@ -34,9 +34,6 @@ class PongKeyPermission(BasePermission):
 class PongPermission(BasePermission):
 
     def has_object_permission(self, request, view, object):
-        if request.user.is_superuser:
-            return True
-
         if object.org.id == request.org.id:
             return True
 
@@ -181,6 +178,10 @@ class PongViewSet(AuthenticatedViewSet):
             PongSerializer(pong).data,
             status=status.HTTP_200_OK
         )
+
+    def get_queryset(self):
+
+        return Pong.objects.filter(org=self.request.org)
 
 
 @api_view(['POST', 'GET'])
