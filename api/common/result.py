@@ -8,6 +8,8 @@ def process_result(
     alert,
     fail_res,
     name,
+    obj_name,
+    obj_id,
     oncall_user,
     diff=0
 ):
@@ -81,6 +83,7 @@ def process_result(
         fail_res,
         diff,
         oncall_user,
-        'pull',
-        name
+        name,
+        obj_name,
+        obj_id,
     )

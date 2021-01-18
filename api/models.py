@@ -347,6 +347,8 @@ class Failure(models.Model):
         ('Metric triggered', 'Metric Triggered'),
         ('start_not_triggered', 'Heartbeat Start'),
         ('comp_not_triggered', 'Heartbeat Complete'),
+        ('runs_less_than', 'Runs less than'),
+        ('runs_more_than', 'Runs more than')
 
     )
     ping = models.ForeignKey(

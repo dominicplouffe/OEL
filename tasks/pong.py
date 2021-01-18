@@ -14,90 +14,60 @@ from oel.celery import app  # noqa
 from api.common import cron  # noqa
 
 
-def process_pong(pos, push_key):
+def _get_interval_value(trigger):
+    interval_value = trigger.interval_value
+    if trigger.unit == "minutes":
+        trigger_value = trigger_value * 60
+    elif trigger.unit == "days":
+        trigger_value = trigger_value * 60 * 24
 
-    pong = models.Pong.objects.filter(
-        push_key=push_key,
-        active=True
-    ).first()
-
-    if not pong:
-        return False
-
-    if not pong.active:
-        return False
-
-    oncall_user = schedule.get_on_call_user(pong.org)
-    reason = 'receive_alert'
-    success = True
-    fail_res = None
-
-    if pos == 'start':
-        pong.last_start_on = datetime.utcnow()
-    elif pos == 'end':
-        pong.last_complete_on = datetime.utcnow()
-
-        if pong.last_start_check is None or (
-            pong.last_start_on != pong.last_start_check
-        ):
-            # Insert the metrics
-            diff = datetime.now(pytz.UTC) - pong.last_start_on
-            metrics = {
-                'task_time': diff.total_seconds()
-            }
-            tags = {
-                'category': 'pong',
-                'id': pong.id
-            }
-            m = models.Metric(
-                org=pong.org,
-                metrics=metrics,
-                tags=tags
-            )
-            m.save()
-            pong.last_start_check = pong.last_start_on
-
-            process_result(
-                success,
-                pong.alert,
-                fail_res,
-                pong.name,
-                oncall_user,
-                diff=diff.total_seconds()
-            )
-
-    pong.save()
-
-    return {
-        'sent': True,
-        'pos': pos
-    }
+    return interval_value
 
 
-@app.task
-def process_pong_alert(pong_id):
+def runs_less_than(trigger, diff, pong, oncall_user):
 
-    triggers = models.PongTrigger.objects.filter(pong_id=pong_id)
-    pong = models.Pong.objects.get(id=pong_id)
-    oncall_user = schedule.get_on_call_user(pong.org)
+    interval_value = _get_interval_value(trigger)
 
-    if not pong.active:
-        return
+    if diff < interval_value:
+        reason = 'runs_less_than'
 
-    for trigger in triggers:
-        fail_res = trigger_actions[trigger.trigger_type](
-            trigger,
-            pong,
-            oncall_user
-        )
-
-        process_result(
-            fail_res == None,
+        fail_res = insert_failure(
             pong.alert,
-            fail_res,
-            pong.name,
+            reason,
+            500,
+            "Expected Seconds: %s - Num Seconds: %.2f" % (
+                interval_value,
+                diff
+            ),
             oncall_user
         )
+
+        return fail_res
+
+    return None
+
+
+def runs_more_than(trigger, diff, pong, oncall_user):
+
+    interval_value = _get_interval_value(trigger)
+
+    if diff > interval_value:
+        reason = 'runs_more_than'
+
+        fail_res = insert_failure(
+            pong.alert,
+            reason,
+            500,
+            "Expected Seconds: %s - Num Seconds: %.2f" % (
+                interval_value,
+                diff
+            ),
+            oncall_user
+        )
+
+        return fail_res
+
+    return None
 
 
 def start_not_triggered_in(trigger, pong, oncall_user):
@@ -110,11 +80,7 @@ def start_not_triggered_in(trigger, pong, oncall_user):
 
     diff = datetime.now(pytz.UTC) - pong.last_start_on
 
-    interval_value = trigger.interval_value
-    if trigger.unit == "minutes":
-        trigger_value = trigger_value * 60
-    elif trigger.unit == "days":
-        trigger_value = trigger_value * 60 * 24
+    interval_value = _get_interval_value(trigger)
 
     if (diff.total_seconds() > interval_value):
 
@@ -149,11 +115,7 @@ def complete_not_triggered_in(trigger, pong, oncall_user):
 
     print('complete_not_triggered_in: %s' % diff)
 
-    interval_value = trigger.interval_value
-    if trigger.unit == "minutes":
-        trigger_value = trigger_value * 60
-    elif trigger.unit == "days":
-        trigger_value = trigger_value * 60 * 24
+    interval_value = _get_interval_value(trigger)
 
     if (diff.total_seconds() > interval_value):
 
@@ -175,10 +137,134 @@ def complete_not_triggered_in(trigger, pong, oncall_user):
     return None
 
 
-trigger_actions = {
-    'start_not_triggered_in': start_not_triggered_in,
-    'complete_not_triggered_in': complete_not_triggered_in
-}
+def process_pong(pos, push_key):
+
+    pong = models.Pong.objects.filter(
+        push_key=push_key,
+        active=True
+    ).first()
+
+    if not pong:
+        return False
+
+    if not pong.active:
+        return False
+
+    oncall_user = schedule.get_on_call_user(pong.org)
+    reason = 'receive_alert'
+    success = True
+    fail_res = None
+    sent = False
+
+    if pos == 'start':
+        pong.last_start_on = datetime.utcnow()
+    elif pos == 'end':
+        pong.last_complete_on = datetime.utcnow()
+
+        if pong.last_start_check is None or (
+            pong.last_start_on != pong.last_start_check
+        ):
+            triggers = models.PongTrigger.objects.filter(pong_id=pong.id)
+
+            trigger_actions = {
+                'runs_more_than': runs_more_than,
+                'runs_less_than': runs_less_than
+            }
+
+            # Get diff
+            diff = datetime.now(pytz.UTC) - pong.last_start_on
+
+            # Insert the metrics
+            metrics = {
+                'task_time': diff.total_seconds()
+            }
+            tags = {
+                'category': 'pong',
+                'id': pong.id
+            }
+            m = models.Metric(
+                org=pong.org,
+                metrics=metrics,
+                tags=tags
+            )
+            m.save()
+
+            # Set Pong last start check date
+            pong.last_start_check = pong.last_start_on
+
+            for trigger in triggers:
+                if trigger.trigger_type not in trigger_actions:
+                    continue
+
+                fail_res = trigger_actions[trigger.trigger_type](
+                    trigger,
+                    diff.total_seconds(),
+                    pong,
+                    oncall_user
+                )
+
+                if fail_res:
+                    success = False
+                    break
+
+            sent = process_result(
+                success,
+                pong.alert,
+                fail_res,
+                pong.name,
+                'pong',
+                pong.id,
+                oncall_user,
+                diff=diff.total_seconds()
+            )
+
+    pong.save()
+
+    return {
+        'sent': sent,
+        'pos': pos
+    }
+
+
+@app.task
+def process_pong_alert(pong_id):
+
+    triggers = models.PongTrigger.objects.filter(pong_id=pong_id)
+    pong = models.Pong.objects.get(id=pong_id)
+    oncall_user = schedule.get_on_call_user(pong.org)
+
+    if not pong.active:
+        return
+
+    trigger_actions = {
+        'start_not_triggered_in': start_not_triggered_in,
+        'complete_not_triggered_in': complete_not_triggered_in
+    }
+
+    fail_res = None
+
+    for trigger in triggers:
+        if trigger.trigger_type not in trigger_actions:
+            continue
+
+        fail_res = trigger_actions[trigger.trigger_type](
+            trigger,
+            pong,
+            oncall_user
+        )
+
+        if fail_res:
+            break
+
+    process_result(
+        fail_res == None,
+        pong.alert,
+        fail_res,
+        pong.name,
+        'pong',
+        pong.id,
+        oncall_user
+    )
 
 
 if __name__ == '__main__':

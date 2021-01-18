@@ -8,7 +8,6 @@ import requests  # noqa
 from oel.celery import app  # noqa
 from datetime import datetime  # noqa
 from api import models  # noqa
-from tasks.notification import notification_check  # noqa
 from api.common import schedule  # noqa
 from api.common import failure as fail_svc  # noqa
 import json  # noqa
@@ -201,6 +200,8 @@ def process_ping(ping_id, failure=insert_failure, process_res=True):
         ping.alert,
         fail_res,
         ping.name,
+        'ping',
+        ping.id,
         oncall_user,
         diff=diff
     )
