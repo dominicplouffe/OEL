@@ -66,16 +66,17 @@ def copy_code(ssh):
     ssh.exec_command('sudo systemctl restart oel')
     ssh.exec_command('sudo systemctl restart oelsup')
 
-
-def put_file(ssh):
-    print('Uploading Zip File')
     ssh.exec_command('sudo rm -r oel')
     ssh.exec_command('sudo rm -r api')
     ssh.exec_command('sudo rm -r tasks')
+    ssh.exec_command('sudo rm -r tools')
     ssh.exec_command('sudo rm manage.py')
     ssh.exec_command('sudo rm requirements.txt')
     ssh.exec_command('sudo rm %s' % ZIP_FILENAME)
 
+
+def put_file(ssh):
+    print('Uploading Zip File')
     time.sleep(1.0)
     sftp = ssh.open_sftp()
     sftp.put(ZIP_FILENAME, ZIP_FILENAME)
@@ -96,7 +97,6 @@ def deploy(deploy_type):
                     break
 
             if deploy_to_instance:
-                print(i.keys())
                 print(i['PublicDnsName'])
                 ipaddress = i.get('PublicIpAddress', None)
                 print('Deploying to %s' % ipaddress)

@@ -58,7 +58,7 @@ def process_pong(pos, push_key):
             pong.last_start_check = pong.last_start_on
 
             process_result(
-                False,
+                success,
                 pong.alert,
                 fail_res,
                 pong.name,
@@ -80,6 +80,9 @@ def process_pong_alert(pong_id):
     triggers = models.PongTrigger.objects.filter(pong_id=pong_id)
     pong = models.Pong.objects.get(id=pong_id)
     oncall_user = schedule.get_on_call_user(pong.org)
+
+    if not pong.active:
+        return
 
     for trigger in triggers:
         fail_res = trigger_actions[trigger.trigger_type](
