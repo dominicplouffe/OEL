@@ -54,9 +54,6 @@ def create_ssh_connection(public_ip):
 def copy_code(ssh):
     print('Copying Code')
     res = ssh.exec_command('unzip %s' % ZIP_FILENAME)
-    print('****')
-    print(res)
-    print('****')
     ssh.exec_command('sudo rm -r /opt/oel/*')
 
     ssh.exec_command('sudo cp -r oel /opt/oel')
@@ -79,6 +76,7 @@ def put_file(ssh):
     ssh.exec_command('sudo rm requirements.txt')
     ssh.exec_command('sudo rm %s' % ZIP_FILENAME)
 
+    time.sleep(1.0)
     sftp = ssh.open_sftp()
     sftp.put(ZIP_FILENAME, ZIP_FILENAME)
 

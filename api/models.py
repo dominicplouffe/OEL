@@ -109,6 +109,7 @@ class Pong(models.Model):
     active = models.BooleanField(default=True)
 
     push_key = models.CharField(max_length=255, null=True, blank=True)
+    cron_desc = models.CharField(max_length=255, null=True, blank=True)
 
     task = models.ForeignKey(
         PeriodicTask,
@@ -118,6 +119,7 @@ class Pong(models.Model):
     )
 
     last_start_on = models.DateTimeField(null=True, blank=True)
+    last_start_check = models.DateTimeField(null=True, blank=True)
     last_complete_on = models.DateTimeField(null=True, blank=True)
 
     alert = models.ForeignKey(
@@ -146,6 +148,12 @@ class PongTrigger(models.Model):
         ('runs_more_than', 'Runs more than')
     )
 
+    TRIGGER_UNITS = (
+        ('seconds', 'Seconds'),
+        ('minutes', 'Minutes'),
+        ('days', 'Days'),
+    )
+
     trigger_type = models.CharField(
         max_length=50,
         null=False,
@@ -153,6 +161,12 @@ class PongTrigger(models.Model):
         choices=TRIGGER_TYPE
     )
     interval_value = models.IntegerField(null=True, blank=True)
+    unit = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        choices=TRIGGER_UNITS
+    )
     pong = models.ForeignKey(
         Pong,
         on_delete=models.CASCADE,

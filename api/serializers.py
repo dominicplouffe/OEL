@@ -1,9 +1,9 @@
 from rest_framework.serializers import (
-    ModelSerializer, ReadOnlyField, SerializerMethodField
+    ModelSerializer, ReadOnlyField, SerializerMethodField, BooleanField
 )
 from api.models import (
     Org, OrgUser, Failure, PingHeader, Ping, Schedule, VitalInstance, Alert,
-    Pong, MetricCondition
+    Pong, MetricCondition, PongTrigger
 )
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
@@ -32,13 +32,33 @@ class PingSerializer(ModelSerializer):
         fields = '__all__'
 
 
+class PongTriggerSerializer(ModelSerializer):
+
+    interval_error = BooleanField(default=False)
+    is_delete = BooleanField(default=False)
+
+    class Meta:
+        model = PongTrigger
+        fields = '__all__'
+
+
 class PongSerializer(ModelSerializer):
 
     alert = AlertSerializer(read_only=True)
+    triggers = SerializerMethodField()
 
     class Meta:
         model = Pong
         fields = '__all__'
+
+    def get_triggers(self, pong):
+
+        triggers = []
+
+        for t in PongTrigger.objects.filter(pong=pong):
+            triggers.append(PongTriggerSerializer(t).data)
+
+        return triggers
 
 
 class VitalInstanceSerializer(ModelSerializer):

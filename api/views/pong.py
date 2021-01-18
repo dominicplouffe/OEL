@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 
 from api.base import AuthenticatedViewSet
-from api.models import Alert, Pong, Result
+from api.models import Alert, Pong, Result, PongTrigger
 from api.serializers import PongSerializer
 from api.tools import cache
 from django_filters.rest_framework import DjangoFilterBackend
@@ -13,6 +13,7 @@ from rest_framework.permissions import (AllowAny, BasePermission,
 from rest_framework.response import Response
 from tasks.pong import process_pong
 from django_celery_beat.models import PeriodicTask, IntervalSchedule
+from croniter import CroniterBadCronError, croniter
 
 
 class PongKeyPermission(BasePermission):
@@ -75,7 +76,7 @@ class PongViewSet(AuthenticatedViewSet):
         )
         task = PeriodicTask(
             name=pong_data['name'],
-            task='tasks.ping.process_ping',
+            task='tasks.pong.process_pong_alert',
             interval=task_interval
         )
         task.save()
@@ -108,6 +109,18 @@ class PongViewSet(AuthenticatedViewSet):
 
         pong.alert = alert
         pong.save()
+
+        task.args = [pong_serializer.data['id']]
+        task.save()
+
+        for t in pong_data['triggers']:
+            newt = PongTrigger(
+                trigger_type=t['trigger_type'],
+                interval_value=int(t['interval']),
+                unit=t['unit'],
+                pong=pong
+            )
+            newt.save()
 
         return Response(
             pong_serializer.data,
@@ -145,6 +158,25 @@ class PongViewSet(AuthenticatedViewSet):
             setattr(pong, attr, value)
         pong.save()
 
+        for t in pong_data['triggers']:
+            if t['id']:
+                newt = PongTrigger.objects.get(id=t['id'])
+                if not t['is_delete']:
+                    newt.trigger_type = t['trigger_type']
+                    newt.interval_value = t['interval_value']
+                    newt.unit = t['unit']
+                    newt.save()
+                else:
+                    newt.delete()
+            if not t['id']:
+                newt = PongTrigger(
+                    trigger_type=t['trigger_type'],
+                    interval_value=int(t['interval']),
+                    unit=t['unit'],
+                    pong=pong
+                )
+                newt.save()
+
         return Response(
             PongSerializer(pong).data,
             status=status.HTTP_200_OK
@@ -155,21 +187,42 @@ class PongViewSet(AuthenticatedViewSet):
 @permission_classes([AllowAny])
 def pongme(request, pos, push_key):
 
-    # TODO
-    # cache_key = 'xauth-req-%s' % push_key
-    # if cache.get(cache_key):
-    #     return Response(
-    #         {
-    #             'details': 'Too many requests'
-    #         },
-    #         status=status.HTTP_429_TOO_MANY_REQUESTS
-    #     )
+    cache_key = 'xauth-req-%s-%s' % (push_key, pos)
+    if cache.get(cache_key):
+        return Response(
+            {
+                'details': 'Too many requests'
+            },
+            status=status.HTTP_429_TOO_MANY_REQUESTS
+        )
 
-    # cache.set(cache_key, 1, expire=SECS_BETWEEN_PONGS)
+    cache.set(cache_key, 1, expire=SECS_BETWEEN_PONGS)
 
     res = process_pong(pos, push_key)
 
     return Response({'notification_sent': res}, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def validate_cron(request):
+
+    cron = request.data.get('cron', '')
+
+    try:
+        ex = croniter.expand(cron)[0]
+
+        return Response(
+            {'data': ex},
+            status=status.HTTP_200_OK
+        )
+
+    except CroniterBadCronError:
+
+        return Response(
+            {'error': 'Invalid Cron'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
 
 
 @api_view(['GET'])
