@@ -7,7 +7,7 @@ from api.views.ping import (
     fix, acknowledge, ignore
 )
 from api.views.pong import (
-    pongme, PongViewSet, pong_details
+    pongme, PongViewSet, pong_details, validate_cron
 )
 from api.views.failure import FailureViewSet, failure_count
 from api.views.ping_header import PingHeaderViewSet
@@ -101,6 +101,7 @@ urlpatterns = [
     # Pongs
     path('pongme/<pos>/<push_key>', pongme, name='pong-me'),
     path('pong/details/<int:id>/', pong_details, name='pong-ind-details'),
+    path('pong/cron_check/', validate_cron, name='pong-check'),
 
     # Metics
     path('metrics/<api_key>', metrics.add_metrics, name="add-metrics"),

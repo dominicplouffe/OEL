@@ -11,11 +11,11 @@ from tasks.ping import insert_failure  # noqa
 from api.common.result import process_result  # noqa
 from datetime import datetime  # noqa
 from oel.celery import app  # noqa
+from api.common import cron  # noqa
 
 
 def process_pong(pos, push_key):
 
-    # process_pong_alert(2)
     pong = models.Pong.objects.filter(
         push_key=push_key,
         active=True
@@ -33,6 +33,26 @@ def process_pong(pos, push_key):
         pong.last_start_on = datetime.utcnow()
     elif pos == 'end':
         pong.last_complete_on = datetime.utcnow()
+
+        if pong.last_start_check is None or (
+            pong.last_start_on != pong.last_start_check
+        ):
+            # Insert the metrics
+            diff = datetime.now(pytz.UTC) - pong.last_start_on
+            metrics = {
+                'task_time': diff.total_seconds()
+            }
+            tags = {
+                'category': 'pong',
+                'id': pong.id
+            }
+            m = models.Metric(
+                org=pong.org,
+                metrics=metrics,
+                tags=tags
+            )
+            m.save()
+            pong.last_start_check = pong.last_start_on
 
     pong.save()
 
@@ -88,6 +108,10 @@ def start_not_triggered_in(trigger, pong, oncall_user):
     if not pong.last_start_on:
         return
 
+    if pong.cron_desc:
+        if not cron.is_now_ok(pong.cron_desc):
+            return
+
     diff = datetime.now(pytz.UTC) - pong.last_start_on
 
     if (diff.total_seconds() > trigger.interval_value):
@@ -106,19 +130,6 @@ def start_not_triggered_in(trigger, pong, oncall_user):
         )
 
         return fail_res
-    else:
-        metrics = {
-            'task_time': diff
-        }
-        tags = {
-            'category': 'pong'
-        }
-        m = Metric(
-            org=pong.org,
-            metric=metrics,
-            tags=tags
-        )
-        m.save()
 
     return None
 
@@ -128,7 +139,13 @@ def complete_not_triggered_in(trigger, pong, oncall_user):
     if not pong.last_complete_on:
         return
 
+    if pong.cron_desc:
+        if not cron.is_now_ok(pong.cron_desc):
+            return
+
     diff = datetime.now(pytz.UTC) - pong.last_complete_on
+
+    print('complete_not_triggered_in: %s' % diff)
 
     if (diff.total_seconds() > trigger.interval_value):
 
