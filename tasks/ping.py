@@ -88,7 +88,6 @@ def do_ping(
             '',
             oncall_user
         )
-    end_time = datetime.utcnow()
 
     if res is not None:
         if res.status_code != expected_status_code:
@@ -156,7 +155,7 @@ def do_ping(
                     oncall_user
                 )
 
-    return res, reason, fail_res
+    return res, reason, fail_res, success
 
 
 @app.task
@@ -203,10 +202,11 @@ def process_ping(ping_id, failure=insert_failure, process_res=True):
 
     diff = 0.00
     start_time = datetime.utcnow()
-    res, reason, fail_res = do_ping(
-        endpoint, ping.expected_str, ping.expected_value, ping.content_type,
+    res, reason, fail_res, success = do_ping(
+        endpoint, ping.expected_string, ping.expected_value, ping.content_type,
         ping.status_code, auth=pass_info, headers=headers, alert=ping.alert,
         failure=failure, oncall_user=oncall_user)
+    end_time = datetime.utcnow()
 
     if (not process_res):
         return res, reason
