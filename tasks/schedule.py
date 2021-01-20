@@ -10,6 +10,8 @@ from datetime import datetime  # noqa
 from api.tools import mail, text  # noqa
 from oel.celery import app  # noqa
 import logging  # noqa
+from api.common.schedule import get_on_call_user  # noqa
+from datetime import datetime, timedelta  # noqa
 
 logger = logging.getLogger(__name__)
 
@@ -22,12 +24,14 @@ def reschedule():
     if date.weekday() != 0:
         return
 
+    yesterday = datetime.utcnow() - timedelta(days=1)
+    today = datetime.utcnow()
+
     for org in models.Org.objects.all():
 
         # Tell previous user that they are going off call
         try:
-            sch = models.Schedule.objects.get(org=org, order=org.week)
-            usr = sch.org_user
+            usr = get_on_call_user(org, current_date=yesterday)
         except models.Schedule.DoesNotExist:
             logger.error('Could not find any users: %s' % org.name)
             continue
@@ -51,8 +55,7 @@ def reschedule():
 
         # Tell new user that they are going on call.
         try:
-            sch = models.Schedule.objects.get(org=org, order=new_week)
-            usr = sch.org_user
+            usr = get_on_call_user(org, current_date=today)
         except models.Schedule.DoesNotExist:
             logger.error('Could not find any users: %s' % org.name)
             continue
