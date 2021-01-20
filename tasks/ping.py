@@ -42,6 +42,123 @@ def insert_failure(alert, reason, status_code, content, org_user):
     return fail
 
 
+def do_ping(
+    endpoint, expected_str, expected_value, content_type, expected_status_code,
+    failure=None, alert=None, auth=None, headers=None, oncall_user=None
+):
+
+    def insert_failure_tmp(ping, reason, status_code, content, org_user):
+        pass
+
+    if failure is None:
+        failure = insert_failure_tmp
+    success = True
+    res = None
+    reason = None
+    fail_res = None
+    try:
+        res = requests.get(endpoint, headers=headers, auth=auth)
+    except requests.exceptions.ConnectionError:
+        success = False
+        reason = 'connection_error'
+        fail_res = failure(
+            alert,
+            reason,
+            0,
+            '',
+            oncall_user
+        )
+    except requests.exceptions.ConnectTimeout:
+        success = False
+        reason = 'timeout_error'
+        fail_res = failure(
+            alert,
+            reason,
+            0,
+            '',
+            oncall_user
+        )
+    except BaseException as e:
+        success = False
+        reason = 'http_error'
+        fail_res = failure(
+            alert,
+            reason,
+            0,
+            '',
+            oncall_user
+        )
+    end_time = datetime.utcnow()
+
+    if res is not None:
+        if res.status_code != expected_status_code:
+            success = False
+            reason = 'status_code'
+            fail_res = failure(
+                alert,
+                reason,
+                res.status_code,
+                res.content.decode('utf-8'),
+                oncall_user
+            )
+        elif content_type == "application/json":
+            content = res.json()
+
+            keys = expected_str.split('.')
+            try:
+                for k in keys:
+                    content = content[k]
+
+                content_value = '%s' % content
+                content_value = content_value.lower()
+                if content_value != expected_value.lower():
+                    success = False
+                    reason = 'value_error'
+                    fail_res = failure(
+                        alert,
+                        reason,
+                        res.status_code,
+                        res.content.decode('utf-8'),
+                        oncall_user
+                    )
+
+            except KeyError:
+                success = False
+                reason = 'key_error'
+                fail_res = failure(
+                    alert,
+                    reason,
+                    res.status_code,
+                    res.content.decode('utf-8'),
+                    oncall_user
+                )
+            except TypeError:
+                success = False
+                reason = 'key_error'
+                fail_res = failure(
+                    alert,
+                    reason,
+                    res.status_code,
+                    res.content.decode('utf-8'),
+                    oncall_user
+                )
+        else:
+            content = res.content.decode('utf-8')
+
+            if expected_value not in content:
+                success = False
+                reason = 'invalid_value'
+                fail_res = failure(
+                    alert,
+                    reason,
+                    res.status_code,
+                    res.content.decode('utf-8'),
+                    oncall_user
+                )
+
+    return res, reason, fail_res
+
+
 @app.task
 def process_ping(ping_id, failure=insert_failure, process_res=True):
 
@@ -84,111 +201,12 @@ def process_ping(ping_id, failure=insert_failure, process_res=True):
             ping.endpoint_password
         )
 
-    success = True
-    res = None
-    reason = None
-    start_time = datetime.utcnow()
-    fail_res = None
     diff = 0.00
-    try:
-        res = requests.get(endpoint, headers=headers, auth=pass_info)
-    except requests.exceptions.ConnectionError:
-        success = False
-        reason = 'connection_error'
-        fail_res = failure(
-            ping.alert,
-            reason,
-            0,
-            '',
-            oncall_user
-        )
-    except requests.exceptions.ConnectTimeout:
-        success = False
-        reason = 'timeout_error'
-        fail_res = failure(
-            ping.alert,
-            reason,
-            0,
-            '',
-            oncall_user
-        )
-    except BaseException:
-        success = False
-        reason = 'http_error'
-        fail_res = failure(
-            ping.alert,
-            reason,
-            0,
-            '',
-            oncall_user
-        )
-    end_time = datetime.utcnow()
-
-    if res is not None:
-        if res.status_code != ping.status_code:
-            success = False
-            reason = 'status_code'
-            fail_res = failure(
-                ping.alert,
-                reason,
-                res.status_code,
-                res.content.decode('utf-8'),
-                oncall_user
-            )
-        elif ping.content_type == "application/json":
-            content = res.json()
-
-            keys = ping.expected_string.split('.')
-            try:
-                for k in keys:
-                    content = content[k]
-
-                content_value = '%s' % content
-                content_value = content_value.lower()
-                if content_value != ping.expected_value.lower():
-                    success = False
-                    reason = 'value_error'
-                    fail_res = failure(
-                        ping.alert,
-                        reason,
-                        res.status_code,
-                        res.content.decode('utf-8'),
-                        oncall_user
-                    )
-
-            except KeyError:
-                success = False
-                reason = 'key_error'
-                fail_res = failure(
-                    ping.alert,
-                    reason,
-                    res.status_code,
-                    res.content.decode('utf-8'),
-                    oncall_user
-                )
-            except TypeError:
-                success = False
-                reason = 'key_error'
-                fail_res = failure(
-                    ping.alert,
-                    reason,
-                    res.status_code,
-                    res.content.decode('utf-8'),
-                    oncall_user
-                )
-        else:
-            content = res.content.decode('utf-8')
-
-            if ping.expected_value not in content:
-                success = False
-                reason = 'invalid_value'
-                fail_res = failure(
-                    ping.alert,
-                    reason,
-                    res.status_code,
-                    res.content.decode('utf-8'),
-                    oncall_user
-                )
+    start_time = datetime.utcnow()
+    res, reason, fail_res = do_ping(
+        endpoint, ping.expected_str, ping.expected_value, ping.content_type,
+        ping.status_code, auth=pass_info, headers=headers, alert=ping.alert,
+        failure=failure, oncall_user=oncall_user)
 
     if (not process_res):
         return res, reason
