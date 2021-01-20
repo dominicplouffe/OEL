@@ -3,7 +3,7 @@ from django.contrib import admin
 from .models import (
     Org, OrgUser, Ping, PingHeader, Pong, MetricCondition,
     Result, Failure, Schedule, Metric, VitalInstance, Alert,
-    PongTrigger
+    PongTrigger, ScheduleOverride
 )
 
 admin.site.register(Alert)
@@ -19,3 +19,4 @@ admin.site.register(Schedule)
 admin.site.register(Metric)
 admin.site.register(VitalInstance)
 admin.site.register(PongTrigger)
+admin.site.register(ScheduleOverride)
