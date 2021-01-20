@@ -1,4 +1,4 @@
-from api.models import Schedule, OrgUser
+from api.models import Schedule, OrgUser, ScheduleOverride
 
 
 def add_user_to_schedule(org_user, org):
@@ -53,7 +53,19 @@ def update_user_order(user_id, org, new_index):
         return None
 
 
-def get_on_call_user(org):
+def get_on_call_user(org, current_date=None):
+
+    if current_date is None:
+        current_date = datetime.utcnow()
+
+    try:
+        over = ScheduleOverride.objects.get(
+            start_date__gte=current_date, end_date__lte=current_date
+        )
+
+        return over.org_user
+    except ScheduleOverride.DoesNotExist:
+        pass
 
     try:
         s = Schedule.objects.get(org=org, order=org.week)

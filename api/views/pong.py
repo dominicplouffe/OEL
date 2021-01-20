@@ -1,5 +1,6 @@
-from datetime import datetime, timedelta
+import pretty_cron
 
+from datetime import datetime, timedelta
 from api.base import AuthenticatedViewSet
 from api.models import Alert, Pong, Result, PongTrigger
 from api.serializers import PongSerializer
@@ -211,10 +212,16 @@ def validate_cron(request):
     cron = request.data.get('cron', '')
 
     try:
-        ex = croniter.expand(cron)[0]
+        payload = {
+            'res': croniter.expand(cron)[0],
+            'pretty': None
+        }
+
+        if payload['res']:
+            payload['pretty'] = pretty_cron.prettify_cron(cron)
 
         return Response(
-            {'data': ex},
+            payload,
             status=status.HTTP_200_OK
         )
 
