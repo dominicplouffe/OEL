@@ -502,3 +502,14 @@ class MetricCondition(models.Model):
 
     created_on = models.DateTimeField(default=datetime.now)
     updated_on = models.DateTimeField(auto_now=True)
+
+
+class ScheduleOverride(models.Model):
+    org = models.ForeignKey(Org, on_delete=models.CASCADE, null=True)
+    org_user = models.ForeignKey(OrgUser, on_delete=models.CASCADE, null=False)
+
+    start_date = models.DateTimeField()
+    end_date = models.DateTimeField()
+
+    created_on = models.DateTimeField(default=datetime.now)
+    updated_on = models.DateTimeField(auto_now=True)

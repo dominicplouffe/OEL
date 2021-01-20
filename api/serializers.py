@@ -3,7 +3,7 @@ from rest_framework.serializers import (
 )
 from api.models import (
     Org, OrgUser, Failure, PingHeader, Ping, Schedule, VitalInstance, Alert,
-    Pong, MetricCondition, PongTrigger
+    Pong, MetricCondition, PongTrigger, ScheduleOverride
 )
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
@@ -147,4 +147,11 @@ class MetricConditionSerializer(ModelSerializer):
 
     class Meta:
         model = MetricCondition
+        fields = '__all__'
+
+
+class ScheduleOverrideSerializer(ModelSerializer):
+
+    class Meta:
+        model = ScheduleOverride
         fields = '__all__'
