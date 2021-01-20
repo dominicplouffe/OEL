@@ -222,7 +222,7 @@ def ping_test2(request):
     if ping_req.validated_data['headers']:
         headers = ping_req.validated_data['headers']
 
-    ping_res, reason, _ = do_ping(
+    ping_res, reason, _, _ = do_ping(
         ping_req.validated_data['endpoint'],
         ping_req.validated_data['expected_str'],
         ping_req.validated_data['expected_value'],
