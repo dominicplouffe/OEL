@@ -5,9 +5,10 @@ from rest_framework.permissions import BasePermission
 from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
+from rest_framework import serializers
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
-from tasks.ping import process_ping, insert_failure
+from tasks.ping import process_ping, insert_failure, do_ping
 from django_celery_beat.models import PeriodicTask, IntervalSchedule
 from datetime import datetime, timedelta
 
@@ -177,6 +178,63 @@ def ping_test(request, id):
 
     res['http_status_code'] = ping_res.status_code
     res['content'] = ping_res.content.decode('utf-8')
+    res['check_status'] = reason is None
+    res['reason'] = reason
+
+    return Response(res)
+
+
+class PingTestRequestSerializer(serializers.Serializer):
+    endpoint = serializers.URLField(max_length=2048)
+    expected_str = serializers.CharField(
+        max_length=255, required=True, allow_blank=True)
+    expected_value = serializers.CharField(
+        max_length=255, required=False, allow_blank=True)
+    content_type = serializers.CharField(max_length=255, required=True)
+    status_code = serializers.IntegerField(required=True)
+    username = serializers.CharField(
+        max_length=255, required=False, allow_blank=True)
+    password = serializers.CharField(
+        max_length=255, required=False, allow_blank=True)
+    headers = serializers.DictField(required=False, default=dict)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def ping_test2(request):
+
+    ping_req = PingTestRequestSerializer(data=request.data)
+    ping_req.is_valid(raise_exception=True)
+
+    res = {
+        'http_status_code': 0,
+        'content': "",
+        'check_status': False,
+        'reason': None
+    }
+    auth = None
+    if ping_req.validated_data['username'] and ping_req.validated_data['password']:
+        auth = (
+            ping_req.validated_data['username'],
+            ping_req.validated_data['password'],
+        )
+    headers = {}
+    if ping_req.validated_data['headers']:
+        headers = ping_req.validated_data['headers']
+
+    ping_res, reason, _, _ = do_ping(
+        ping_req.validated_data['endpoint'],
+        ping_req.validated_data['expected_str'],
+        ping_req.validated_data['expected_value'],
+        ping_req.validated_data['content_type'],
+        ping_req.validated_data['status_code'],
+        auth=auth,
+        headers=headers
+    )
+
+    if ping_res:
+        res['http_status_code'] = ping_res.status_code
+        res['content'] = ping_res.content.decode('utf-8')
     res['check_status'] = reason is None
     res['reason'] = reason
 

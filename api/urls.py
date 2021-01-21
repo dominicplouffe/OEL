@@ -4,7 +4,7 @@ from django.urls import path
 
 from api.views.ping import (
     PingViewSet, ping_test, ping_details, ping_now,
-    fix, acknowledge, ignore
+    fix, acknowledge, ignore, ping_test2
 )
 from api.views.pong import (
     pongme, PongViewSet, pong_details, validate_cron
@@ -102,6 +102,7 @@ urlpatterns = [
 
     # Pings
     path('ping-test/<int:id>/', ping_test, name='ping-test'),
+    path('ping-test/', ping_test2, name='ping-test2'),
     path('ping/details/<int:id>/', ping_details, name='ping-ind-details'),
     path('ping/now/<int:id>/', ping_now, name='ping-now'),
 
