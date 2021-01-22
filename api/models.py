@@ -1,4 +1,5 @@
 from datetime import datetime
+from django.utils import timezone
 
 from django.db import models
 from django.contrib.auth.models import User
@@ -12,7 +13,7 @@ class Org(models.Model):
     name = models.CharField(max_length=200, null=False)
     week = models.IntegerField(null=False, blank=False, default=1)
     api_key = models.CharField(max_length=64, null=False, blank=False)
-    created_on = models.DateTimeField(default=datetime.now)
+    created_on = models.DateTimeField(default=timezone.now)
     updated_on = models.DateTimeField(auto_now=True)
 
     def __str__(self):
@@ -61,7 +62,7 @@ class OrgUser(models.Model):
     is_oncall = models.BooleanField(default=False)
     code = models.CharField(null=True, blank=True, max_length=10)
     color = models.CharField(max_length=10, null=True, blank=True)
-    created_on = models.DateTimeField(default=datetime.now)
+    created_on = models.DateTimeField(default=timezone.now)
     updated_on = models.DateTimeField(auto_now=True)
 
     def __str__(self):
@@ -98,7 +99,7 @@ class Alert(models.Model):
     callback_password = models.CharField(max_length=255, null=True, blank=True)
 
     notified_on = models.DateTimeField(null=True, blank=True)
-    created_on = models.DateTimeField(default=datetime.now)
+    created_on = models.DateTimeField(default=timezone.now)
     updated_on = models.DateTimeField(auto_now=True)
 
 
@@ -129,7 +130,7 @@ class Pong(models.Model):
         on_delete=models.CASCADE
     )
 
-    created_on = models.DateTimeField(default=datetime.now)
+    created_on = models.DateTimeField(default=timezone.now)
     updated_on = models.DateTimeField(auto_now=True)
 
     def __str__(self):
@@ -172,7 +173,7 @@ class PongTrigger(models.Model):
         on_delete=models.CASCADE,
         null=False
     )
-    created_on = models.DateTimeField(default=datetime.now)
+    created_on = models.DateTimeField(default=timezone.now)
     updated_on = models.DateTimeField(auto_now=True)
 
 
@@ -187,7 +188,7 @@ class Ping(models.Model):
     incident_interval = models.IntegerField(null=False, blank=False, default=1)
 
     active = models.BooleanField(default=True)
-    created_on = models.DateTimeField(default=datetime.now)
+    created_on = models.DateTimeField(default=timezone.now)
     updated_on = models.DateTimeField(auto_now=True)
     interval = models.IntegerField(null=True, blank=True)
 
@@ -208,6 +209,9 @@ class Ping(models.Model):
     )
     expected_string = models.CharField(max_length=1000, null=True, blank=True)
     expected_value = models.CharField(max_length=1000, null=True, blank=True)
+    endpoint = models.CharField(max_length=1000, null=True, blank=True)
+    endpoint_username = models.CharField(max_length=50, null=True, blank=True)
+    endpoint_password = models.CharField(max_length=50, null=True, blank=True)
 
     alert = models.ForeignKey(
         Alert,
@@ -243,7 +247,7 @@ class PingHeader(models.Model):
         blank=False,
         choices=HEADER_TYPE
     )
-    created_on = models.DateTimeField(default=datetime.now)
+    created_on = models.DateTimeField(default=timezone.now)
     updated_on = models.DateTimeField(auto_now=True)
 
 
@@ -271,7 +275,7 @@ class Result(models.Model):
     success = models.IntegerField(null=False)
     failure = models.IntegerField(null=False)
     total_time = models.FloatField(null=False)
-    created_on = models.DateTimeField(default=datetime.now)
+    created_on = models.DateTimeField(default=timezone.now)
     updated_on = models.DateTimeField(auto_now=True)
 
 
@@ -315,7 +319,7 @@ class Failure(models.Model):
     )
     content = models.CharField(
         max_length=10000, null=True, blank=True)
-    created_on = models.DateTimeField(default=datetime.now)
+    created_on = models.DateTimeField(default=timezone.now)
     acknowledged_on = models.DateTimeField(null=True, blank=True)
     acknowledged_by = models.ForeignKey(
         OrgUser,
@@ -346,7 +350,7 @@ class Failure(models.Model):
 class PongData(models.Model):
 
     pong = models.ForeignKey(Ping, on_delete=models.CASCADE, null=False)
-    created_on = models.DateTimeField(default=datetime.now)
+    created_on = models.DateTimeField(default=timezone.now)
     data = models.JSONField(null=False, blank=False)
 
 
@@ -394,7 +398,7 @@ class Metric(models.Model):
     org = models.ForeignKey(Org, on_delete=models.CASCADE, null=True)
     metrics = models.JSONField()
     tags = models.JSONField()
-    created_on = models.DateTimeField(default=datetime.now)
+    created_on = models.DateTimeField(default=timezone.now)
 
 
 class VitalInstance(models.Model):
@@ -402,7 +406,7 @@ class VitalInstance(models.Model):
     instance_id = models.CharField(max_length=256, null=True, blank=True)
     name = models.CharField(max_length=256, null=True, blank=True)
     active = models.BooleanField(default=True)
-    created_on = models.DateTimeField(default=datetime.now)
+    created_on = models.DateTimeField(default=timezone.now)
     updated_on = models.DateTimeField(auto_now=True)
 
 
@@ -436,7 +440,7 @@ class MetricCondition(models.Model):
         on_delete=models.CASCADE
     )
 
-    created_on = models.DateTimeField(default=datetime.now)
+    created_on = models.DateTimeField(default=timezone.now)
     updated_on = models.DateTimeField(auto_now=True)
 
 
@@ -447,5 +451,5 @@ class ScheduleOverride(models.Model):
     start_date = models.DateTimeField()
     end_date = models.DateTimeField()
 
-    created_on = models.DateTimeField(default=datetime.now)
+    created_on = models.DateTimeField(default=timezone.now)
     updated_on = models.DateTimeField(auto_now=True)

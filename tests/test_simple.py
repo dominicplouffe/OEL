@@ -8,7 +8,7 @@ class TestLogin(BaseTest):
 
         client = APIClient()
         org = OrgFactory.create()
-        user = OrgUserFactory.create(org=org)
+        user = self.create_org_user(org)
 
         res = client.login(
             username=user.email_address,

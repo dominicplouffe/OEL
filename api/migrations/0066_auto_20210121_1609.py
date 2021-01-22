@@ -32,18 +32,6 @@ class Migration(migrations.Migration):
         ),
         migrations.RemoveField(
             model_name='ping',
-            name='endpoint',
-        ),
-        migrations.RemoveField(
-            model_name='ping',
-            name='endpoint_password',
-        ),
-        migrations.RemoveField(
-            model_name='ping',
-            name='endpoint_username',
-        ),
-        migrations.RemoveField(
-            model_name='ping',
             name='failure_count',
         ),
         migrations.RemoveField(
