@@ -17,31 +17,38 @@ logger = logging.getLogger(__name__)
 
 
 @app.task
-def reschedule():
-
-    date = datetime.utcnow()
-
-    if date.weekday() != 0:
-        return
+def reschedule(org, send_anyways=False):
 
     yesterday = datetime.utcnow() - timedelta(days=1)
     today = datetime.utcnow()
 
-    for org in models.Org.objects.all():
+    # Check if there's an override for today
+    override_today = models.ScheduleOverride.objects.filter(
+        start_date__lte=today, end_date__gte=today, org=org
+    )
+    override_yesterday = models.ScheduleOverride.objects.filter(
+        start_date__lte=yesterday, end_date__gte=yesterday, org=org
+    )
 
-        # Tell previous user that they are going off call
-        try:
-            usr = get_on_call_user(org, current_date=yesterday)
-        except models.Schedule.DoesNotExist:
-            logger.error('Could not find any users: %s' % org.name)
-            continue
+    if not send_anyways:
+        if today.weekday() != 0 and override_today.count() == 0 and \
+                override_yesterday.count() == 0:
+            return
 
-        logger.info('Sending notification to: %s' % usr.email_address)
-        if usr.notification_type == "email":
-            mail.send_going_oncall_email(usr.email_address)
-        else:
-            text.send_going_offcall(usr.phone_number)
+    # Tell previous user that they are going off call
+    try:
+        usr = get_on_call_user(org, current_date=yesterday)
+    except models.Schedule.DoesNotExist:
+        logger.error('Could not find any users: %s' % org.name)
+        return
 
+    logger.info('Sending notification to: %s' % usr.email_address)
+    if usr.notification_type == "email":
+        mail.send_going_offcall_email(usr.email_address)
+    else:
+        text.send_going_offcall(usr.phone_number)
+
+    if today.weekday() == 0:
         # Increament the week
         new_week = org.week + 1
 
@@ -53,20 +60,21 @@ def reschedule():
         org.week = new_week
         org.save()
 
-        # Tell new user that they are going on call.
-        try:
-            usr = get_on_call_user(org, current_date=today)
-        except models.Schedule.DoesNotExist:
-            logger.error('Could not find any users: %s' % org.name)
-            continue
+    # Tell new user that they are going on call.
+    try:
+        usr = get_on_call_user(org, current_date=today)
+    except models.Schedule.DoesNotExist:
+        logger.error('Could not find any users: %s' % org.name)
+        return
 
-        logger.info('Sending notification to: %s' % usr.email_address)
-        if usr.notification_type == "email":
-            mail.send_going_oncall_email(usr.email_address)
-        else:
-            text.send_going_oncall(usr.phone_number)
+    logger.info('Sending notification to: %s' % usr.email_address)
+    if usr.notification_type == "email":
+        mail.send_going_oncall_email(usr.email_address)
+    else:
+        text.send_going_oncall(usr.phone_number)
 
 
 if __name__ == '__main__':
 
-    reschedule()
+    for org in models.Org.objects.all():
+        reschedule(org)

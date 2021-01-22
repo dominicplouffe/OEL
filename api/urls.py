@@ -16,7 +16,7 @@ from api.views.metric_condition import (
 )
 from api.views.org_user import (
     OrgUserViewSet, send_invite, check_invite, finish_invite, resend_invite,
-    update_user_order, send_notification_update
+    update_user_order, send_notification_update, get_on_call_user
 )
 from api.views.org import OrgViewSet
 from api.views.auth import (
@@ -98,6 +98,9 @@ urlpatterns = [
         'org_user/send_notification_update',
         send_notification_update,
         name='send_notification_update'
+    ),
+    path(
+        'org_user/get_on_call_user', get_on_call_user, name='get_on_call_user'
     ),
 
     # Pings

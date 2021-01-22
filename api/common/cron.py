@@ -19,7 +19,7 @@ def is_now_ok(cron_desc):
         nhour = now.hour
         ndaymonth = now.day
         nmonth = now.month
-        ndayweek = now.weekday
+        ndayweek = now.weekday() + 1
 
         if chour[0] != '*':
             if nhour not in chour:

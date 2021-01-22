@@ -61,7 +61,8 @@ def get_on_call_user(org, current_date=None):
 
     try:
         over = ScheduleOverride.objects.get(
-            start_date__gte=current_date, end_date__lte=current_date
+            start_date__lte=current_date, end_date__gte=current_date,
+            org=org
         )
 
         return over.org_user
