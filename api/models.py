@@ -182,50 +182,13 @@ class Ping(models.Model):
         ('application/json', 'JSON')
     )
 
-    NOTIFICATION_TYPE = (
-        ('team', 'Team'),
-        ('callback', 'Callback')
-    )
-
-    DIRECTION = (
-        ('push', 'Push'),
-        ('pull', 'Pull')
-    )
-
     org = models.ForeignKey(Org, on_delete=models.CASCADE, null=False)
     name = models.CharField(max_length=30, null=False, blank=False)
-    doc_link = models.CharField(max_length=255, null=True, blank=True)
-    direction = models.CharField(
-        max_length=10,
-        default='pull',
-        choices=DIRECTION
-    )
-
-    notification_type = models.CharField(
-        max_length=20,
-        null=False,
-        blank=False,
-        choices=NOTIFICATION_TYPE
-    )
-
     incident_interval = models.IntegerField(null=False, blank=False, default=1)
 
     active = models.BooleanField(default=True)
-    failure_count = models.IntegerField(default=0)
-
-    # How to communicate the failures
-    callback_url = models.CharField(max_length=255, null=True, blank=True)
-    callback_userame = models.CharField(max_length=255, null=True, blank=True)
-    callback_password = models.CharField(max_length=255, null=True, blank=True)
-
-    notified_on = models.DateTimeField(null=True, blank=True)
     created_on = models.DateTimeField(default=datetime.now)
     updated_on = models.DateTimeField(auto_now=True)
-
-    # Ping Settings
-    endpoint = models.CharField(max_length=255, null=True, blank=True)
-    endpoint_username = models.CharField(max_length=255, null=True, blank=True)
-    endpoint_password = models.CharField(max_length=255, null=True, blank=True)
     interval = models.IntegerField(null=True, blank=True)
 
     task = models.ForeignKey(
@@ -245,9 +208,6 @@ class Ping(models.Model):
     )
     expected_string = models.CharField(max_length=1000, null=True, blank=True)
     expected_value = models.CharField(max_length=1000, null=True, blank=True)
-
-    # Pong Settings
-    push_key = models.CharField(max_length=255, null=True, blank=True)
 
     alert = models.ForeignKey(
         Alert,
