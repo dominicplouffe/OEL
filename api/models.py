@@ -228,12 +228,6 @@ class PingHeader(models.Model):
         ('endpoint', 'Endpoint'),
         ('callback', 'Callback')
     )
-    ping = models.ForeignKey(
-        Ping,
-        on_delete=models.CASCADE,
-        null=True
-    )
-
     alert = models.ForeignKey(
         Alert,
         null=True,
@@ -258,11 +252,6 @@ class Result(models.Model):
         ('hour', 'Hour'),
         ('day', 'Day')
     )
-    ping = models.ForeignKey(
-        Ping,
-        on_delete=models.CASCADE,
-        null=True
-    )
 
     alert = models.ForeignKey(
         Alert,
@@ -285,14 +274,6 @@ class Result(models.Model):
     created_on = models.DateTimeField(default=datetime.now)
     updated_on = models.DateTimeField(auto_now=True)
 
-    # def __str__(self):
-    #     return '{0} - {1} - {2} - {3}'.format(
-    #         self.ping.org.name,
-    #         self.ping.name,
-    #         self.result_type,
-    #         self.result_date.strftime('%Y-%m-%d %H:00')
-    #     )
-
 
 class Failure(models.Model):
     REASON = (
@@ -311,11 +292,6 @@ class Failure(models.Model):
         ('runs_less_than', 'Runs less than'),
         ('runs_more_than', 'Runs more than')
 
-    )
-    ping = models.ForeignKey(
-        Ping,
-        on_delete=models.CASCADE,
-        null=True
     )
 
     alert = models.ForeignKey(
