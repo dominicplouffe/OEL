@@ -159,28 +159,23 @@ def do_ping(
 
 
 @app.task
-def process_ping(ping_id, failure=insert_failure, process_res=True):
+def process_ping(ping_id, failure=insert_failure):
 
-    if process_res:
-        ping = models.Ping.objects.filter(
-            pk=ping_id,
-            active=True
-        ).first()
-    else:
-        ping = models.Ping.objects.filter(
-            pk=ping_id
-        ).first()
+    ping = models.Ping.objects.filter(
+        pk=ping_id,
+        active=True
+    ).first()
 
     if not ping:
-        return None, None
+        return False
 
-    if not ping.active and process_res:
-        return None, None
+    if not ping.active:
+        return False
 
     oncall_user = schedule.get_on_call_user(ping.org)
 
     if not oncall_user:
-        return None, None
+        return False
 
     endpoint = ping.endpoint
 
@@ -200,16 +195,22 @@ def process_ping(ping_id, failure=insert_failure, process_res=True):
             ping.endpoint_password
         )
 
-    diff = 0.00
     start_time = datetime.utcnow()
-    res, reason, fail_res, success = do_ping(
-        endpoint, ping.expected_string, ping.expected_value, ping.content_type,
-        ping.status_code, auth=pass_info, headers=headers, alert=ping.alert,
-        failure=failure, oncall_user=oncall_user)
-    end_time = datetime.utcnow()
 
-    if (not process_res):
-        return res, reason
+    res, reason, fail_res, success = do_ping(
+        endpoint,
+        ping.expected_string,
+        ping.expected_value,
+        ping.content_type,
+        ping.status_code,
+        auth=pass_info,
+        headers=headers,
+        alert=ping.alert,
+        failure=failure,
+        oncall_user=oncall_user
+    )
+
+    end_time = datetime.utcnow()
 
     diff = (end_time - start_time).total_seconds()
 

@@ -281,7 +281,7 @@ def ping_details(request, id):
 @permission_classes([IsAuthenticated])
 def ping_now(request, id):
     res = process_ping(
-        id, failure=insert_failure, process_res=True
+        id, failure=insert_failure
     )
 
     if res is None:

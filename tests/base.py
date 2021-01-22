@@ -76,6 +76,51 @@ class PeriodicTaskFactory(factory.django.DjangoModelFactory):
         abstract = False
 
 
+class AlertFactory(factory.django.DjangoModelFactory):
+
+    class Meta:
+        model = models.Alert
+        abstract = False
+
+    notification_type = 'team'
+    incident_interval = 1
+    doc_link = factory.Faker('url')
+    active = True
+    failure_count = 0
+
+
+class PingFactory(factory.django.DjangoModelFactory):
+
+    class Meta:
+        model = models.Ping
+        abstract = False
+
+    name = factory.Faker('text', max_nb_chars=30)
+    active = True
+    interval = 5
+    status_code = 200
+    expected_string = None
+    expected_value = None
+    endpoint = factory.Faker('url')
+    endpoint_username = factory.Faker('first_name')
+    endpoint_password = factory.Faker('password')
+    content_type = 'text/plain'
+
+
+class ResultFactory(factory.django.DjangoModelFactory):
+
+    class Meta:
+        model = models.Result
+        abstract = False
+
+
+class FailureFactory(factory.django.DjangoModelFactory):
+
+    class Meta:
+        model = models.Failure
+        abstract = False
+
+
 class BaseTest(TestCase):
 
     def setUp(self):
