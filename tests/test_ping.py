@@ -2,6 +2,7 @@ from tests.base import BaseTest, OrgFactory, OrgUserFactory
 from rest_framework.test import APIClient
 from api.models import Ping, PingHeader
 import os
+from mock import patch
 
 
 class TestPing(BaseTest):
@@ -162,3 +163,183 @@ class TestPing(BaseTest):
         self.assertEqual(ping.task.args, '[%s]' % ping.id)
         self.assertEqual(ping.task.interval.every, int(payload['interval']))
         self.assertEqual(ping.task.interval.period, 'minutes')
+
+    @patch('tasks.ping.requests.get')
+    def test_ping_test_happy(self, m_get):
+
+        def j():
+            return {"headers": {"Auth": "True"}}
+
+        m_get.return_value.status_code = 200
+        m_get.return_value.json = j
+        m_get.return_value.content = "abc".encode()
+
+        client = APIClient()
+        org = OrgFactory.create()
+        user = OrgUserFactory.create(org=org)
+
+        res = client.login(
+            username=user.email_address,
+            password='12345'
+        )
+        self.assertEqual(res, True)
+
+        payload = {
+            'endpoint': 'https://www.dplouffe.ca/api/whatsmyiap',
+            'expected_str': 'headers.Auth',
+            'expected_value': 'True',
+            'content_type': 'application/json',
+            'status_code': 200,
+            'username': 'dplouffe',
+            'password': 'redmaninjeans',
+            'headers': {
+                'Auth': 'True'
+            }
+        }
+
+        res = client.post(
+            '/api/ping-test/',
+            payload,
+            format='json'
+        )
+
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.data['check_status'], True)
+
+        payload = {
+            'endpoint': 'https://www.dplouffe.ca/api/whatsmyiap',
+            'expected_str': '',
+            'expected_value': 'abc',
+            'content_type': 'text/plain',
+            'status_code': 200,
+            'username': 'dplouffe',
+            'password': 'redmaninjeans',
+            'headers': {
+                'Auth': 'True'
+            }
+        }
+
+        res = client.post(
+            '/api/ping-test/',
+            payload,
+            format='json'
+        )
+
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.data['check_status'], True)
+
+    @patch('tasks.ping.requests.get')
+    def test_ping_test_bad_status(self, m_get):
+
+        def j():
+            return {"headers": {"Auth": "Truee"}}
+
+        m_get.return_value.status_code = 200
+        m_get.return_value.json = j
+        m_get.return_value.content = "abc".encode()
+
+        client = APIClient()
+        org = OrgFactory.create()
+        user = OrgUserFactory.create(org=org)
+
+        res = client.login(
+            username=user.email_address,
+            password='12345'
+        )
+        self.assertEqual(res, True)
+
+        # Invalid key/VALUE pair
+        payload = {
+            'endpoint': 'https://www.dplouffe.ca/api/whatsmyiap',
+            'expected_str': 'headers.Auth',
+            'expected_value': 'True',
+            'content_type': 'application/json',
+            'status_code': 200,
+            'username': 'dplouffe',
+            'password': 'redmaninjeans',
+            'headers': {
+                'Auth': 'True'
+            }
+        }
+
+        res = client.post(
+            '/api/ping-test/',
+            payload,
+            format='json'
+        )
+
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.data['check_status'], False)
+        self.assertEqual(res.data['reason'], 'value_error')
+
+        # Invalid KEY/value pair
+        payload = {
+            'endpoint': 'https://www.dplouffe.ca/api/whatsmyiap',
+            'expected_str': 'headers.Autha',
+            'expected_value': 'Truee',
+            'content_type': 'application/json',
+            'status_code': 200,
+            'username': 'dplouffe',
+            'password': 'redmaninjeans',
+            'headers': {
+                'Auth': 'True'
+            }
+        }
+
+        res = client.post(
+            '/api/ping-test/',
+            payload,
+            format='json'
+        )
+
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.data['check_status'], False)
+        self.assertEqual(res.data['reason'], 'key_error')
+
+        # Invalid Text
+        payload = {
+            'endpoint': 'https://www.dplouffe.ca/api/whatsmyiap',
+            'expected_str': '',
+            'expected_value': 'bbbb',
+            'content_type': 'text/plain',
+            'status_code': 200,
+            'username': 'dplouffe',
+            'password': 'redmaninjeans',
+            'headers': {
+                'Auth': 'True'
+            }
+        }
+
+        res = client.post(
+            '/api/ping-test/',
+            payload,
+            format='json'
+        )
+
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.data['check_status'], False)
+        self.assertEqual(res.data['reason'], 'invalid_value')
+
+        # Invalid Status Code
+        payload = {
+            'endpoint': 'https://www.dplouffe.ca/api/whatsmyiap',
+            'expected_str': '',
+            'expected_value': 'bbbb',
+            'content_type': 'text/plain',
+            'status_code': 201,
+            'username': 'dplouffe',
+            'password': 'redmaninjeans',
+            'headers': {
+                'Auth': 'True'
+            }
+        }
+
+        res = client.post(
+            '/api/ping-test/',
+            payload,
+            format='json'
+        )
+
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.data['check_status'], False)
+        self.assertEqual(res.data['reason'], 'status_code')
