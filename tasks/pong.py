@@ -17,9 +17,9 @@ from api.common import cron  # noqa
 def _get_interval_value(trigger):
     interval_value = trigger.interval_value
     if trigger.unit == "minutes":
-        trigger_value = trigger_value * 60
+        interval_value = trigger.interval_value * 60
     elif trigger.unit == "days":
-        trigger_value = trigger_value * 60 * 24
+        interval_value = trigger.interval_value * 60 * 24
 
     return interval_value
 
@@ -281,7 +281,7 @@ def process_pong_alert(pong_id):
             break
 
     process_result(
-        fail_res == None,
+        fail_res is None,
         pong.alert,
         fail_res,
         pong.name,

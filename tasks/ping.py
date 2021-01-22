@@ -78,7 +78,7 @@ def do_ping(
             '',
             oncall_user
         )
-    except BaseException as e:
+    except BaseException:
         success = False
         reason = 'http_error'
         fail_res = failure(
