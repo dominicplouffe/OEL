@@ -16,7 +16,7 @@ def send_going_offcall(phone_number):
 
     sent_text_message(
         phone_number,
-        "Just letting you know that your on-call assistance"
+        "OnErrorLog: Just letting you know that your on-call assistance"
         " is no longer needed"
     )
 
@@ -24,8 +24,7 @@ def send_going_offcall(phone_number):
 def send_going_oncall(phone_number):
     sent_text_message(
         phone_number,
-        "Just letting you know that you are going on call "
-        "for the next 7 days"
+        "OnErrorLog: Just letting you know that you are going on call"
     )
 
 

@@ -272,6 +272,7 @@ def finish_invite(request, *args, **kwargs):
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def update_user_order(request, *args, **kwargs):
 
     user_id = request.data.get('user_id')
@@ -287,6 +288,7 @@ def update_user_order(request, *args, **kwargs):
 
 
 @api_view(['POST', 'GET'])
+@permission_classes([IsAuthenticated])
 def send_notification_update(request, *args, **kwargs):
 
     offcall_user_id = request.data.get('offcall_id')
@@ -305,3 +307,15 @@ def send_notification_update(request, *args, **kwargs):
         text.send_going_oncall(current_user.phone_number)
 
     return Response({}, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_on_call_user(request, *args, **kwargs):
+
+    usr = schedule.get_on_call_user(request.org)
+
+    return Response(
+        OrgUserSerializer(usr).data,
+        status=status.HTTP_200_OK
+    )

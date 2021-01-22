@@ -107,6 +107,9 @@ DATABASES = {
         'PASSWORD': get_env_variable('OEL_PASSWORD', ''),
         'HOST': get_env_variable('OEL_HOSTNAME', ''),
         'PORT': get_env_variable('OEL_PORT', ''),
+        'TEST': {
+            'NAME': 'auto_tests',
+        }
     }
 }
 
