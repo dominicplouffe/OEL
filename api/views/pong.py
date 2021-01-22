@@ -15,6 +15,7 @@ from rest_framework.response import Response
 from tasks.pong import process_pong
 from django_celery_beat.models import PeriodicTask, IntervalSchedule
 from croniter import CroniterBadCronError, croniter
+from tasks.pong import process_pong_alert
 
 
 class PongKeyPermission(BasePermission):
@@ -70,10 +71,11 @@ class PongViewSet(AuthenticatedViewSet):
         pong_data['org'] = request.org.id
 
         task_interval = IntervalSchedule.objects.get(
-            every=5
+            every=1,
+            period='minutes'
         )
         task = PeriodicTask(
-            name=pong_data['name'],
+            name='Pong %s' % pong_data['name'],
             task='tasks.pong.process_pong_alert',
             interval=task_interval
         )
@@ -297,3 +299,11 @@ def pong_details(request, id):
     return Response({
         'calendar': calendar
     })
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def process_pong_now(request, id):
+    process_pong_alert(id)
+
+    return Response({}, status=status.HTTP_200_OK)
