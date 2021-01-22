@@ -75,7 +75,7 @@ class TestPing(BaseTest):
 
         # Assert PeriodicTask
         self.assertEqual(ping.task.args, '[%s]' % ping.id)
-        self.assertEqual(ping.task.name, payload['name'])
+        self.assertEqual(ping.task.name, 'Ping: %s' % payload['name'])
         self.assertEqual(ping.task.interval.every, int(payload['interval']))
         self.assertEqual(ping.task.interval.period, 'minutes')
 
