@@ -150,40 +150,6 @@ class PingViewSet(AuthenticatedViewSet):
         )
 
 
-@ api_view(['GET'])
-@ permission_classes([IsAuthenticated])
-def ping_test(request, id):
-
-    def insert_failure_tmp(ping, reason, status_code, content, org_user):
-        pass
-
-    ping = Ping.objects.get(pk=id)
-
-    if not ping:
-        return Response(status=status.HTTP_404_NOT_FOUND)
-
-    if ping.org.id != request.org.id:
-        return Response(status=status.HTTP_403_FORBIDDEN)
-
-    res = {
-        'http_status_code': 0,
-        'content': "",
-        'check_status': False,
-        'reason': None
-    }
-
-    ping_res, reason = process_ping(
-        ping.id, failure=insert_failure_tmp, process_res=False
-    )
-
-    res['http_status_code'] = ping_res.status_code
-    res['content'] = ping_res.content.decode('utf-8')
-    res['check_status'] = reason is None
-    res['reason'] = reason
-
-    return Response(res)
-
-
 class PingTestRequestSerializer(serializers.Serializer):
     endpoint = serializers.URLField(max_length=2048)
     expected_str = serializers.CharField(
@@ -213,7 +179,9 @@ def ping_test2(request):
         'reason': None
     }
     auth = None
-    if ping_req.validated_data['username'] and ping_req.validated_data['password']:
+    if ping_req.validated_data[
+        'username'
+    ] and ping_req.validated_data['password']:
         auth = (
             ping_req.validated_data['username'],
             ping_req.validated_data['password'],
@@ -313,7 +281,7 @@ def ping_details(request, id):
 @permission_classes([IsAuthenticated])
 def ping_now(request, id):
     res = process_ping(
-        id, failure=insert_failure, process_res=True
+        id, failure=insert_failure
     )
 
     if res is None:

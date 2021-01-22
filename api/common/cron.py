@@ -9,13 +9,11 @@ def is_now_ok(cron_desc):
 
         now = datetime.utcnow()
 
-        cmin = ex[0]
         chour = ex[1]
         cdaymonth = ex[2]
         cmonth = ex[3]
         cdayweek = ex[4]
 
-        nmin = now.minute
         nhour = now.hour
         ndaymonth = now.day
         nmonth = now.month
