@@ -213,7 +213,9 @@ def ping_test2(request):
         'reason': None
     }
     auth = None
-    if ping_req.validated_data['username'] and ping_req.validated_data['password']:
+    if ping_req.validated_data[
+        'username'
+    ] and ping_req.validated_data['password']:
         auth = (
             ping_req.validated_data['username'],
             ping_req.validated_data['password'],

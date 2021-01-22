@@ -2,7 +2,7 @@ from api.models import ScheduleOverride
 from rest_framework import filters
 from api.base import AuthenticatedViewSet
 from rest_framework.permissions import BasePermission
-from django_filters.rest_framework import DjangoFilterBackend, IsoDateTimeFromToRangeFilter, FilterSet
+from django_filters.rest_framework import DjangoFilterBackend, FilterSet
 
 from api.serializers import ScheduleOverrideSerializer
 
