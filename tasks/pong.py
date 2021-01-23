@@ -78,11 +78,11 @@ def start_not_triggered_in(trigger, pong, oncall_user):
         if not cron.is_now_ok(pong.cron_desc):
             return
 
-    diff = datetime.now(pytz.UTC) - pong.last_start_on
+    diff = (datetime.now(pytz.UTC) - pong.last_start_on).total_seconds() - 60
 
     interval_value = _get_interval_value(trigger)
 
-    if (diff.total_seconds() > interval_value):
+    if (diff > interval_value):
 
         reason = 'start_not_triggered'
 
@@ -92,7 +92,7 @@ def start_not_triggered_in(trigger, pong, oncall_user):
             500,
             "Pong Start On last triggered on: %s - Num Seconds: %.2f" % (
                 pong.last_start_on,
-                diff.total_seconds()
+                diff
             ),
             oncall_user
         )
@@ -111,13 +111,13 @@ def complete_not_triggered_in(trigger, pong, oncall_user):
         if not cron.is_now_ok(pong.cron_desc):
             return
 
-    diff = datetime.now(pytz.UTC) - pong.last_complete_on
+    diff = (datetime.now(pytz.UTC) - pong.last_start_on).total_seconds() - 60
 
     print('complete_not_triggered_in: %s' % diff)
 
     interval_value = _get_interval_value(trigger)
 
-    if (diff.total_seconds() > interval_value):
+    if (diff > interval_value):
 
         reason = 'comp_not_triggered'
 
@@ -127,7 +127,7 @@ def complete_not_triggered_in(trigger, pong, oncall_user):
             500,
             "Pong Completed On Last triggered on: %s - Num Seconds: %.2f" % (
                 pong.last_start_on,
-                diff.total_seconds()
+                diff
             ),
             oncall_user
         )
@@ -170,7 +170,7 @@ def process_pong(pos, push_key):
     sent = False
 
     if pos == 'start':
-        pong.last_start_on = datetime.utcnow()
+        pong.last_start_on = datetime.now(pytz.UTC)
     elif pos == 'fail':
         try:
             trigger = models.PongTrigger.objects.get(
@@ -178,12 +178,24 @@ def process_pong(pos, push_key):
                 trigger_type='heartbeat_triggered'
             )
             fail_res = heartbeat_triggered(trigger, pong, oncall_user)
-            sent = True
+
+            success = False
+
+            sent = process_result(
+                success,
+                pong.alert,
+                fail_res,
+                pong.name,
+                'pong',
+                pong.id,
+                oncall_user
+            )
+
         except models.PongTrigger.DoesNotExist:
             pass
 
     elif pos == 'end':
-        pong.last_complete_on = datetime.utcnow()
+        pong.last_complete_on = datetime.now(pytz.UTC)
 
         if pong.last_start_check is None or (
             pong.last_start_on != pong.last_start_check

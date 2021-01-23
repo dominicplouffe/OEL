@@ -1,5 +1,6 @@
 import re
 import json
+import pytz
 from random import randrange
 from api.models import OrgUser
 from django.contrib.auth.models import User
@@ -252,14 +253,14 @@ def finish_invite(request, *args, **kwargs):
         return Response({}, status=status.HTTP_403_FORBIDDEN)
 
     new_data = request.data
-    usr.email_verified_on = datetime.utcnow()
+    usr.email_verified_on = datetime.now(pytz.UTC)
     usr.role = 'user'
     usr.is_oncall = False
     usr.active = True
     usr.code = None
     if new_data.get('phone_number'):
         usr.phone_number = new_data.get('phone_number')
-        usr.phone_number_verified_on = datetime.utcnow()
+        usr.phone_number_verified_on = datetime.now(pytz.UTC)
 
     usr.user.set_password(new_data['password'])
     usr.user.is_active = True

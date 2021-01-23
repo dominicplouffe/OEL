@@ -60,10 +60,11 @@ class PingViewSet(AuthenticatedViewSet):
         ping_data['org'] = request.org.id
 
         task_interval = IntervalSchedule.objects.get(
-            every=ping_data['interval']
+            every=ping_data['interval'],
+            period="minutes"
         )
         task = PeriodicTask(
-            name=ping_data['name'],
+            name='Ping: %s' % ping_data['name'],
             task='tasks.ping.process_ping',
             interval=task_interval
         )

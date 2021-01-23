@@ -7,6 +7,14 @@ from api.models import (
 )
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
+from django_celery_beat.models import PeriodicTask
+
+
+class PeriodicTaskSerializer(ModelSerializer):
+
+    class Meta:
+        model = PeriodicTask
+        fields = '__all__'
 
 
 class OrgSerializer(ModelSerializer):
@@ -46,6 +54,7 @@ class PongSerializer(ModelSerializer):
 
     alert = AlertSerializer(read_only=True)
     triggers = SerializerMethodField()
+    task = PeriodicTaskSerializer(read_only=True)
 
     class Meta:
         model = Pong
