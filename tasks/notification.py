@@ -1,4 +1,5 @@
 import json
+import pytz
 from datetime import datetime
 
 import requests
@@ -27,7 +28,7 @@ def notification_check(
 
             if alert.notification_type == "team":
                 if org_user.notification_type == "email":
-                    alert.notified_on = datetime.utcnow()
+                    alert.notified_on = datetime.now(pytz.UTC)
                     mail.send_html_mail(
                         org_user.email_address,
                         "OnErrorLog Success : %s " % name,
@@ -37,7 +38,7 @@ def notification_check(
                         }
                     )
                 else:
-                    alert.notified_on = datetime.utcnow()
+                    alert.notified_on = datetime.now(pytz.UTC)
                     text.send_ping_success(org_user.phone_number, name)
             else:
                 # TODO
@@ -56,7 +57,7 @@ def notification_check(
             notification_sent = True
             if alert.notification_type == "team":
                 if org_user.notification_type == "email":
-                    alert.notified_on = datetime.utcnow()
+                    alert.notified_on = datetime.now(pytz.UTC)
 
                     template_name = "ping_failure.html"
 
@@ -73,7 +74,7 @@ def notification_check(
                         }
                     )
                 else:
-                    alert.notified_on = datetime.utcnow()
+                    alert.notified_on = datetime.now(pytz.UTC)
 
                     text.send_failure(
                         org_user.phone_number, name,
