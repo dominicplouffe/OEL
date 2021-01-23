@@ -26,7 +26,7 @@ def recover_failure(alert):
     fail = get_current_failure(alert)
 
     if fail:
-        fail.recovered_on = datetime.utcnow()
+        fail.recovered_on = datetime.now(pytz.UTC)
         fail.save()
 
 

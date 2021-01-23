@@ -1,5 +1,6 @@
 import random
 import factory
+import pytz
 from api import models
 from django.test import TestCase
 from datetime import datetime, timedelta
@@ -46,7 +47,7 @@ class OrgUserFactory(factory.django.DjangoModelFactory):
     last_name = factory.Faker('last_name')
     email_address = factory.Faker('email')
     active = True
-    email_verified_on = datetime.utcnow()
+    email_verified_on = datetime.now(pytz.UTC)
 
     user = factory.SubFactory(
         UserFactory,
@@ -54,7 +55,7 @@ class OrgUserFactory(factory.django.DjangoModelFactory):
     )
 
     phone_number = factory.Faker('phone_number').generate()[0:20]
-    phone_number_verified_on = datetime.utcnow()
+    phone_number_verified_on = datetime.now(pytz.UTC)
     notification_type = 'email'
     role = 'admin'
     is_oncall = True
@@ -107,6 +108,28 @@ class PingFactory(factory.django.DjangoModelFactory):
     content_type = 'text/plain'
 
 
+class PongFactory(factory.django.DjangoModelFactory):
+
+    class Meta:
+        model = models.Pong
+        abstract = False
+
+    name = factory.Faker('text', max_nb_chars=30)
+    active = True
+    cron_desc = '30 4-23 * * *'
+    push_key = factory.Faker('text', max_nb_chars=50)
+
+
+class PongTriggerFactory(factory.django.DjangoModelFactory):
+
+    class Meta:
+        model = models.PongTrigger
+        abstract = False
+
+    interval_value = 5
+    unit = 'minutes'
+
+
 class ResultFactory(factory.django.DjangoModelFactory):
 
     class Meta:
@@ -127,7 +150,7 @@ class BaseTest(TestCase):
 
         random.seed(93074)
 
-        mins = [5, 10, 15, 20, 25, 30]
+        mins = [1, 5, 10, 15, 20, 25, 30]
 
         for m in mins:
             try:

@@ -75,7 +75,7 @@ class PongViewSet(AuthenticatedViewSet):
             period='minutes'
         )
         task = PeriodicTask(
-            name='Pong %s' % pong_data['name'],
+            name='Pong: %s' % pong_data['name'],
             task='tasks.pong.process_pong_alert',
             interval=task_interval
         )
@@ -107,11 +107,12 @@ class PongViewSet(AuthenticatedViewSet):
         )
         alert.save()
 
-        pong.alert = alert
-        pong.save()
-
         task.args = [pong_serializer.data['id']]
         task.save()
+
+        pong.task = task
+        pong.alert = alert
+        pong.save()
 
         for t in pong_data['triggers']:
             newt = PongTrigger(
