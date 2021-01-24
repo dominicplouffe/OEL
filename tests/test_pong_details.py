@@ -6,6 +6,7 @@ from tests.base import (
 from api import models
 from rest_framework.test import APIClient
 from datetime import datetime, timedelta
+import pytz
 
 
 class TestPongDetails(BaseTest):
@@ -29,7 +30,7 @@ class TestPongDetails(BaseTest):
             alert=alert
         )
 
-        d = datetime.utcnow()
+        d = datetime.now(pytz.UTC)
         d = datetime(d.year, d.month, d.day)
         d = d - timedelta(days=50)
 

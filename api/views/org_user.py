@@ -68,7 +68,7 @@ class OrgUserViewSet(AuthenticatedViewSet):
         usr.notification_type = data['notification_type']
         usr.phone_number = data.get('phone_number', None)
         if usr.phone_number_verified_on is None and usr.phone_number:
-            usr.phone_number_verified_on = datetime.utcnow()
+            usr.phone_number_verified_on = datetime.now(pytz.UTC)
         elif usr.phone_number is None:
             usr.phone_number_verified_on = None
 

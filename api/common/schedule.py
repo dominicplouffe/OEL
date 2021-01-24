@@ -1,4 +1,5 @@
 from datetime import datetime
+import pytz
 from api.models import Schedule, OrgUser, ScheduleOverride
 
 
@@ -57,7 +58,7 @@ def update_user_order(user_id, org, new_index):
 def get_on_call_user(org, current_date=None):
 
     if current_date is None:
-        current_date = datetime.utcnow()
+        current_date = datetime.now(pytz.UTC)
 
     try:
         over = ScheduleOverride.objects.get(

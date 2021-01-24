@@ -12,6 +12,7 @@ from api.common import schedule  # noqa
 from api.common import failure as fail_svc  # noqa
 import json  # noqa
 from api.common.result import process_result  # noqa
+import pytz  # noqa
 
 
 def insert_failure(alert, reason, status_code, content, org_user):
@@ -195,7 +196,7 @@ def process_ping(ping_id, failure=insert_failure):
             ping.endpoint_password
         )
 
-    start_time = datetime.utcnow()
+    start_time = datetime.now(pytz.UTC)
 
     res, reason, fail_res, success = do_ping(
         endpoint,
@@ -210,7 +211,7 @@ def process_ping(ping_id, failure=insert_failure):
         oncall_user=oncall_user
     )
 
-    end_time = datetime.utcnow()
+    end_time = datetime.now(pytz.UTC)
 
     diff = (end_time - start_time).total_seconds()
 
