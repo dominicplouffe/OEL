@@ -281,7 +281,7 @@ def pong_details(request, id):
 
         if res.success / res.count < 0.90:
             status_msg = 'danger'
-            status_text = 'Many pings failed on this day'
+            status_text = 'Many pongs failed on this day'
         elif res.failure > 1:
             status_msg = 'warning'
             status_text = 'At least one failure on this day'

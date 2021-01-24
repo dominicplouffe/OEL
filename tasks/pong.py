@@ -228,10 +228,12 @@ def process_pong(pos, push_key):
             # Set Pong last start check date
             pong.last_start_check = pong.last_start_on
 
+            perf_trigger = False
             for trigger in triggers:
                 if trigger.trigger_type not in trigger_actions:
                     continue
 
+                perf_trigger = True
                 fail_res = trigger_actions[trigger.trigger_type](
                     trigger,
                     diff.total_seconds(),
@@ -243,16 +245,17 @@ def process_pong(pos, push_key):
                     success = False
                     break
 
-            sent = process_result(
-                success,
-                pong.alert,
-                fail_res,
-                pong.name,
-                'pong',
-                pong.id,
-                oncall_user,
-                diff=diff.total_seconds()
-            )
+            if perf_trigger:
+                sent = process_result(
+                    success,
+                    pong.alert,
+                    fail_res,
+                    pong.name,
+                    'pong',
+                    pong.id,
+                    oncall_user,
+                    diff=diff.total_seconds()
+                )
 
     pong.save()
 
