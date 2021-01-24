@@ -1,3 +1,5 @@
+
+import pytz
 from api import models
 from datetime import datetime
 from tasks.notification import notification_check
@@ -13,7 +15,7 @@ def process_result(
     oncall_user,
     diff=0
 ):
-    now = datetime.utcnow()
+    now = datetime.now(pytz.UTC)
     hour_date = datetime(
         now.year, now.month, now.day,
         now.hour, 0, 0

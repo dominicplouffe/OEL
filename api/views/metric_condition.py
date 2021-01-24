@@ -1,3 +1,4 @@
+import pytz
 from api.models import MetricCondition, VitalInstance, Alert, Result
 from rest_framework import filters
 from rest_framework.permissions import BasePermission, IsAuthenticated
@@ -113,7 +114,7 @@ def metric_condition_details(request, id):
     if metric.org.id != request.org.id:
         return Response(status=status.HTTP_403_FORBIDDEN)
 
-    now = datetime.utcnow()
+    now = datetime.now(pytz.UTC)
     now = datetime(now.year, now.month, now.day)
     ago = now - timedelta(days=359)
 

@@ -1,3 +1,4 @@
+import pytz
 from api.models import Metric
 from api.common import schedule
 from tasks.ping import insert_failure
@@ -85,11 +86,11 @@ def get_value(org, instance_id, rule):
     elif rule['metric_rollup'] == 'sum':
 
         if rule['timespan']['span'] == 'hours':
-            created_on = datetime.utcnow() - timedelta(
+            created_on = datetime.now(pytz.UTC) - timedelta(
                 hours=int(rule['timespan']['value'])
             )
         else:
-            created_on = datetime.utcnow() - timedelta(
+            created_on = datetime.now(pytz.UTC) - timedelta(
                 days=int(rule['timespan']['value'])
             )
 
@@ -107,11 +108,11 @@ def get_value(org, instance_id, rule):
     elif rule['metric_rollup'] == 'avg':
 
         if rule['timespan']['span'] == 'hours':
-            created_on = datetime.utcnow() - timedelta(
+            created_on = datetime.now(pytz.UTC) - timedelta(
                 hours=int(rule['timespan']['value'])
             )
         else:
-            created_on = datetime.utcnow() - timedelta(
+            created_on = datetime.now(pytz.UTC) - timedelta(
                 days=int(rule['timespan']['value'])
             )
 

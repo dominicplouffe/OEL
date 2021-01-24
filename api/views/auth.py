@@ -14,6 +14,7 @@ from random import randrange
 from datetime import datetime
 import json
 import uuid
+import pytz
 import re
 
 from api.serializers import UserSerializer, ChangePasswordSerializer
@@ -171,9 +172,9 @@ def signup_code_complete(request):
         first_name=code_info['first_name'],
         last_name=code_info['last_name'],
         email_address=signup_info['email_address'],
-        email_verified_on=datetime.utcnow(),
+        email_verified_on=datetime.now(pytz.UTC),
         phone_number=code_info['phone_number'],
-        phone_number_verified_on=datetime.utcnow(),
+        phone_number_verified_on=datetime.now(pytz.UTC),
         active=True,
         is_oncall=True,
         color=colors.pick_color(request.org)
