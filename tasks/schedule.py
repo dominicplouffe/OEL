@@ -10,6 +10,7 @@ from datetime import datetime  # noqa
 from api.tools import mail, text  # noqa
 from oel.celery import app  # noqa
 import logging  # noqa
+import pytz  # noqa
 from api.common.schedule import get_on_call_user  # noqa
 from datetime import datetime, timedelta  # noqa
 
@@ -19,8 +20,8 @@ logger = logging.getLogger(__name__)
 @app.task
 def reschedule(org, send_anyways=False):
 
-    yesterday = datetime.utcnow() - timedelta(days=1)
-    today = datetime.utcnow()
+    yesterday = datetime.now(pytz.UTC) - timedelta(days=1)
+    today = datetime.now(pytz.UTC)
 
     # Check if there's an override for today
     override_today = models.ScheduleOverride.objects.filter(

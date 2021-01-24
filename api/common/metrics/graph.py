@@ -1,12 +1,13 @@
 from api.models import Metric
 from datetime import datetime, timedelta
+import pytz
 
 
 def get_graph_data(metric_name, tags, org, interval=60, since=1):
 
     interval = interval * 60
 
-    now = datetime.utcnow()
+    now = datetime.now(pytz.UTC)
     query_date = now - timedelta(hours=since)
 
     query = {

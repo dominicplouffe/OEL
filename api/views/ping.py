@@ -1,3 +1,4 @@
+import pytz
 from api.models import Ping, Result, Failure, Alert
 from rest_framework import filters
 from api.base import AuthenticatedViewSet
@@ -223,7 +224,7 @@ def ping_details(request, id):
             status=status.HTTP_403_FORBIDDEN
         )
 
-    now = datetime.utcnow()
+    now = datetime.now(pytz.UTC)
     now = datetime(now.year, now.month, now.day)
     ago = now - timedelta(days=359)
 
@@ -313,7 +314,7 @@ def acknowledge(request, id):
             status=status.HTTP_404_NOT_FOUND
         )
 
-    fail.acknowledged_on = datetime.utcnow()
+    fail.acknowledged_on = datetime.now(pytz.UTC)
     fail.acknowledged_by = request.org_user
     fail.save()
 
@@ -335,7 +336,7 @@ def fix(request, id):
             status=status.HTTP_404_NOT_FOUND
         )
 
-    fail.fixed_on = datetime.utcnow()
+    fail.fixed_on = datetime.now(pytz.UTC)
     fail.fixed_by = request.org_user
 
     fail.alert.failure_count = 0
@@ -360,7 +361,7 @@ def ignore(request, id):
             status=status.HTTP_404_NOT_FOUND
         )
 
-    fail.ignored_on = datetime.utcnow()
+    fail.ignored_on = datetime.now(pytz.UTC)
     fail.ignored_by = request.org_user
 
     fail.alert.failure_count = 0

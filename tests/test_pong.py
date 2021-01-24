@@ -743,6 +743,3 @@ class TestPong(BaseTest):
             res.data['res'][4],
             [3]
         )
-
-        a = 0
-        a += 1

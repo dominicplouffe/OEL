@@ -1,5 +1,6 @@
 from api.models import VitalInstance, Metric
 from datetime import datetime, timedelta
+import pytz
 
 
 def is_vitals_payload(payload):
@@ -36,7 +37,7 @@ def process_incoming_vitals(payload, org):
 
 def get_cpu_stats(instance_id, org, since=1):
 
-    now = datetime.utcnow()
+    now = datetime.now(pytz.UTC)
     query_date = now - timedelta(hours=since)
 
     stats = Metric.objects.filter(
@@ -60,7 +61,7 @@ def get_cpu_stats(instance_id, org, since=1):
 
 def get_mem_stats(instance_id, org, since=1):
 
-    now = datetime.utcnow()
+    now = datetime.now(pytz.UTC)
     query_date = now - timedelta(hours=since)
 
     stats = Metric.objects.filter(
@@ -84,7 +85,7 @@ def get_mem_stats(instance_id, org, since=1):
 
 def get_disk_stats(instance_id, org, partition='/', since=1):
 
-    now = datetime.utcnow()
+    now = datetime.now(pytz.UTC)
     query_date = now - timedelta(hours=since)
 
     stats = Metric.objects.filter(
