@@ -26,7 +26,7 @@ class TestSchedule(BaseTest):
 
         self.assertEqual(res, True)
 
-        schedule.reschedule(org)
+        schedule.do_schedule(org)
 
         self.assertEqual(
             m_send.call_args_list[0][0][0],
@@ -64,7 +64,7 @@ class TestSchedule(BaseTest):
 
         self.assertEqual(res, True)
 
-        schedule.reschedule(org)
+        schedule.do_schedule(org)
 
         self.assertEqual(
             m_text.call_args_list[0][0][0],
@@ -116,7 +116,7 @@ class TestSchedule(BaseTest):
 
         self.assertEqual(res.status_code, 201)
 
-        schedule.reschedule(org)
+        schedule.do_schedule(org)
 
         self.assertEqual(
             m_send.call_args_list[0][0][0],
@@ -167,7 +167,7 @@ class TestSchedule(BaseTest):
 
         self.assertEqual(res.status_code, 201)
 
-        schedule.reschedule(org)
+        schedule.do_schedule(org)
 
         self.assertEqual(
             m_send.call_args_list[0][0][0],

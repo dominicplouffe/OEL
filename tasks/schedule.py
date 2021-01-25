@@ -18,7 +18,13 @@ logger = logging.getLogger(__name__)
 
 
 @app.task
-def reschedule(org, send_anyways=False):
+def reschedule(send_anyways=False):
+
+    for org in models.Org.objects.all():
+        do_schedule(org, send_anyways=send_anyways)
+
+
+def do_schedule(org, send_anyways=False):
 
     yesterday = datetime.now(pytz.UTC) - timedelta(days=1)
     today = datetime.now(pytz.UTC)
@@ -76,6 +82,4 @@ def reschedule(org, send_anyways=False):
 
 
 if __name__ == '__main__':
-
-    for org in models.Org.objects.all():
-        reschedule(org)
+    reschedule()
