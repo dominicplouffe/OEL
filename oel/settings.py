@@ -211,21 +211,21 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_CREATE_MISSING_QUEUES = True
 
-EMAIL_HOST_USER = 'AKIA6GTKOUSDT2IWOFHI'
-EMAIL_HOST_PASSWORD = 'BB5jdbMbF2FKfn7/+Y7cY3dbvpLPa7nR2Ve8gY1moL1e'
-EMAIL_HOST = 'email-smtp.us-east-1.amazonaws.com'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-DEFAULT_FROM_EMAIL = '"OnErrorLog" <dominic@dplouffe.ca>'
-REDIS_HOST = BROKER_URL.split('/')[-1].split(':')[0]
+EMAIL_HOST_USER = get_env_variable('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = get_env_variable('EMAIL_HOST_PASSWORD', '')
+EMAIL_HOST = get_env_variable('EMAIL_HOST', '')
+EMAIL_PORT = int(get_env_variable('EMAIL_PORT', '587'))
+EMAIL_USE_TLS = get_env_variable('EMAIL_USE_TLS', '').lower() == True
+DEFAULT_FROM_EMAIL = get_env_variable('DEFAULT_FROM_EMAIL', '')
 
+TWILIO_SID = get_env_variable('TWILIO_SID', '')
+TWILIO_AUTH_TOKEN = get_env_variable('TWILIO_AUTH_TOKEN', '')
+TWILIO_PHONE = get_env_variable('TWILIO_PHONE', '')
+
+REDIS_HOST = BROKER_URL.split('/')[-1].split(':')[0]
 
 # Application Settings
 ALLOW_GENERIC_EMAILS = os.environ.get('ALLOW_GENERIC_EMAILS', False)
 
 SECS_BETWEEN_PONGS = 10
 PONG_DATA_MAX_LEN = 16384
-
-TWILIO_SID = 'ACa68369fba14607cd774202b6f66cdd3e'
-TWILIO_AUTH_TOKEN = '2a89a2de2621ae8c9eab63d84df97e8d'
-TWILIO_PHONE = '+13437002903'
