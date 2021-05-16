@@ -7,3 +7,7 @@ def index(request):
 
 def index404(request, exception):
     return render(request, "build/index.html")
+
+
+def manifest(request):
+    return render(request, "build/manifest.json")

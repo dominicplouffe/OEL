@@ -42,7 +42,7 @@ def failure_count(request, alert_id):
     org = request.org
 
     try:
-        alert = Alert.objects.get(org=org, pk=alert_id)
+        alert = Alert.objects.get(pk=alert_id)
     except Alert.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
 

@@ -17,18 +17,15 @@ from django.conf.urls import handler404
 from django.contrib import admin
 from django.urls import path, include
 from django.shortcuts import render
-from api.views.dashboard import index, index404
+from api.views.dashboard import index, index404, manifest
 
 
-def manifest(request):
-    return render(request, "build/manifest.json")
+handler404 = "api.views.dashboard.index404"
 
-
-# handler404 = index404
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('api.urls')),
     path('manifest.json', manifest, name="manifest"),
-    # path('', index, name='index')
+    path('', index, name='index')
 ]
