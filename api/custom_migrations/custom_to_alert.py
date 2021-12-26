@@ -42,8 +42,6 @@ def update_pings():
             h.alert = ping.alert
             h.save()
 
-        print(ping.id)
-
 
 def insert_pongs():
 

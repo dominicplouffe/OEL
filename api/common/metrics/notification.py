@@ -27,8 +27,6 @@ def check_notification_rule(
     instance_id = condition.instance.instance_id
     rule = condition.rule
 
-    print(rule)
-
     value = get_value(org, instance_id, rule)
 
     trigger = False
@@ -127,7 +125,6 @@ def get_value(org, instance_id, rule):
         value = 0
         if len(vals) > 0:
             value = sum(vals) / len(vals)
-        print(value)
     else:
         raise ValueError('Invalid metric_rollup')
 

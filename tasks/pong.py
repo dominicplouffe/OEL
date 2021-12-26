@@ -113,8 +113,6 @@ def complete_not_triggered_in(trigger, pong, oncall_user):
 
     diff = (datetime.now(pytz.UTC) - pong.last_start_on).total_seconds() - 60
 
-    print('complete_not_triggered_in: %s' % diff)
-
     interval_value = _get_interval_value(trigger)
 
     if (diff > interval_value):
@@ -228,12 +226,10 @@ def process_pong(pos, push_key):
             # Set Pong last start check date
             pong.last_start_check = pong.last_start_on
 
-            perf_trigger = False
             for trigger in triggers:
                 if trigger.trigger_type not in trigger_actions:
                     continue
 
-                perf_trigger = True
                 fail_res = trigger_actions[trigger.trigger_type](
                     trigger,
                     diff.total_seconds(),
@@ -244,18 +240,16 @@ def process_pong(pos, push_key):
                 if fail_res:
                     success = False
                     break
-
-            if perf_trigger:
-                sent = process_result(
-                    success,
-                    pong.alert,
-                    fail_res,
-                    pong.name,
-                    'pong',
-                    pong.id,
-                    oncall_user,
-                    diff=diff.total_seconds()
-                )
+            sent = process_result(
+                success,
+                pong.alert,
+                fail_res,
+                pong.name,
+                'pong',
+                pong.id,
+                oncall_user,
+                diff=diff.total_seconds()
+            )
 
     pong.save()
 

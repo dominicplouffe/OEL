@@ -26,8 +26,6 @@ def process_metrics():
             send_notification=True
         )
 
-        print(notification_sent)
-
 
 if __name__ == '__main__':
     process_metrics()

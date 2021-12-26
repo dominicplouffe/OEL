@@ -47,14 +47,14 @@ def get_alert_summary(objects, serializer, hours=24):
             }
             start += timedelta(hours=1)
 
-        if object.alert.failure_count > 0:
-            data['down'] += 1
-            pd['status'] = False
-        else:
-            data['up'] += 1
-
         if object.active:
             data['active'] += 1
+
+            if object.alert.failure_count > 0:
+                data['down'] += 1
+                pd['status'] = False
+            else:
+                data['up'] += 1
         else:
             data['paused'] += 1
 
