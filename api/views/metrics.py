@@ -13,6 +13,13 @@ import json
 @permission_classes([AllowAny])
 def add_metrics(request, *args, **kwargs):
 
+    # TODO
+    # Disabling temporarily the metrics endpoint
+    return Response(
+        {},
+        status=status.HTTP_201_CREATED
+    )
+
     try:
         org = Org.objects.get(api_key=kwargs['api_key'])
     except Org.DoesNotExist:

@@ -19,7 +19,7 @@ def get_alert_summary(objects, serializer, hours=24):
     now = datetime.now(pytz.UTC)
     now = datetime(now.year, now.month, now.day, now.hour)
     ago = now - timedelta(hours=hours)
-    snapshot_ago = now - timedelta(hours=24)
+    snapshot_ago = now - timedelta(hours=hours)
 
     for object in objects:
         pd = {
