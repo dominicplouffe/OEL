@@ -1,11 +1,11 @@
 import os
 import django
 
-os.environ["DJANGO_SETTINGS_MODULE"] = 'oel.settings'
+os.environ["DJANGO_SETTINGS_MODULE"] = "oel.settings"
 django.setup()
 
 import requests  # noqa
-from oel.celery import app  # noqa
+from celery import shared_task
 from datetime import datetime  # noqa
 from api import models  # noqa
 from api.common import schedule  # noqa
@@ -36,7 +36,7 @@ def insert_failure(alert, reason, status_code, content, org_user):
             status_code=status_code,
             reason=reason,
             content=content[0:10000],
-            notify_org_user=org_user
+            notify_org_user=org_user,
         )
         fail.save()
 
@@ -44,8 +44,16 @@ def insert_failure(alert, reason, status_code, content, org_user):
 
 
 def do_ping(
-    endpoint, expected_str, expected_value, content_type, expected_status_code,
-    failure=None, alert=None, auth=None, headers=None, oncall_user=None
+    endpoint,
+    expected_str,
+    expected_value,
+    content_type,
+    expected_status_code,
+    failure=None,
+    alert=None,
+    auth=None,
+    headers=None,
+    oncall_user=None,
 ):
 
     def insert_failure_tmp(ping, reason, status_code, content, org_user):
@@ -61,111 +69,86 @@ def do_ping(
         res = requests.get(endpoint, headers=headers, auth=auth)
     except requests.exceptions.ConnectionError:
         success = False
-        reason = 'connection_error'
-        fail_res = failure(
-            alert,
-            reason,
-            0,
-            '',
-            oncall_user
-        )
+        reason = "connection_error"
+        fail_res = failure(alert, reason, 0, "", oncall_user)
     except requests.exceptions.ConnectTimeout:
         success = False
-        reason = 'timeout_error'
-        fail_res = failure(
-            alert,
-            reason,
-            0,
-            '',
-            oncall_user
-        )
+        reason = "timeout_error"
+        fail_res = failure(alert, reason, 0, "", oncall_user)
     except BaseException:
         success = False
-        reason = 'http_error'
-        fail_res = failure(
-            alert,
-            reason,
-            0,
-            '',
-            oncall_user
-        )
+        reason = "http_error"
+        fail_res = failure(alert, reason, 0, "", oncall_user)
 
     if res is not None:
         if res.status_code != expected_status_code:
             success = False
-            reason = 'status_code'
+            reason = "status_code"
             fail_res = failure(
-                alert,
-                reason,
-                res.status_code,
-                res.content.decode('utf-8'),
-                oncall_user
+                alert, reason, res.status_code, res.content.decode("utf-8"), oncall_user
             )
         elif content_type == "application/json":
             content = res.json()
 
-            keys = expected_str.split('.')
+            keys = expected_str.split(".")
             try:
                 for k in keys:
                     content = content[k]
 
-                content_value = '%s' % content
+                content_value = "%s" % content
                 content_value = content_value.lower()
                 if content_value != expected_value.lower():
                     success = False
-                    reason = 'value_error'
+                    reason = "value_error"
                     fail_res = failure(
                         alert,
                         reason,
                         res.status_code,
-                        res.content.decode('utf-8'),
-                        oncall_user
+                        res.content.decode("utf-8"),
+                        oncall_user,
                     )
 
             except KeyError:
                 success = False
-                reason = 'key_error'
+                reason = "key_error"
                 fail_res = failure(
                     alert,
                     reason,
                     res.status_code,
-                    res.content.decode('utf-8'),
-                    oncall_user
+                    res.content.decode("utf-8"),
+                    oncall_user,
                 )
             except TypeError:
                 success = False
-                reason = 'key_error'
+                reason = "key_error"
                 fail_res = failure(
                     alert,
                     reason,
                     res.status_code,
-                    res.content.decode('utf-8'),
-                    oncall_user
+                    res.content.decode("utf-8"),
+                    oncall_user,
                 )
         else:
-            content = res.content.decode('utf-8')
+            content = res.content.decode("utf-8")
 
             if expected_value not in content:
                 success = False
-                reason = 'invalid_value'
+                reason = "invalid_value"
                 fail_res = failure(
                     alert,
                     reason,
                     res.status_code,
-                    res.content.decode('utf-8'),
-                    oncall_user
+                    res.content.decode("utf-8"),
+                    oncall_user,
                 )
 
     return res, reason, fail_res, success
 
 
-@app.task
+@shared_task
 def process_ping(ping_id, failure=insert_failure):
 
-    ping = models.Ping.objects.filter(
-        pk=ping_id,
-        active=True
-    ).first()
+    ping = models.Ping.objects.filter(pk=ping_id, active=True).first()
 
     if not ping:
         return False
@@ -181,8 +164,7 @@ def process_ping(ping_id, failure=insert_failure):
     endpoint = ping.endpoint
 
     ping_headers = models.PingHeader.objects.filter(
-        alert=ping.alert,
-        header_type='endpoint'
+        alert=ping.alert, header_type="endpoint"
     )
 
     headers = {}
@@ -191,10 +173,7 @@ def process_ping(ping_id, failure=insert_failure):
 
     pass_info = None
     if ping.endpoint_username and ping.endpoint_password:
-        pass_info = (
-            ping.endpoint_username,
-            ping.endpoint_password
-        )
+        pass_info = (ping.endpoint_username, ping.endpoint_password)
 
     start_time = datetime.now(pytz.UTC)
 
@@ -208,7 +187,7 @@ def process_ping(ping_id, failure=insert_failure):
         headers=headers,
         alert=ping.alert,
         failure=failure,
-        oncall_user=oncall_user
+        oncall_user=oncall_user,
     )
 
     end_time = datetime.now(pytz.UTC)
@@ -220,13 +199,13 @@ def process_ping(ping_id, failure=insert_failure):
         ping.alert,
         fail_res,
         ping.name,
-        'ping',
+        "ping",
         ping.id,
         oncall_user,
-        diff=diff
+        diff=diff,
     )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     process_ping(13)
