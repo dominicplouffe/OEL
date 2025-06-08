@@ -74,6 +74,8 @@ MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "api.middleware.org.org_middleware",
 ]
+MIDDLEWARE.insert(0, "whitenoise.middleware.WhiteNoiseMiddleware")
+
 
 ROOT_URLCONF = "oel.urls"
 
@@ -190,6 +192,7 @@ CORS_EXPOSE_HEADERS = ["Content-Disposition"]
 
 STATIC_URL = "/static/"
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 BROKER_URL = os.environ.get("BROKER_URL", "redis://localhost:6379")
 CELERY_RESULT_BACKEND = os.environ.get(
