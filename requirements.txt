@@ -25,3 +25,4 @@ factory-boy
 mock
 coverage
 freezegun
+gunicorn
