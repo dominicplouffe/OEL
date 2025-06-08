@@ -1,29 +1,28 @@
 # Use the official lightweight Python image
 FROM python:3.10-slim
 
-# Set the working directory
 WORKDIR /app
 
-# Install system dependencies (including netcat-openbsd for the 'nc' command)
+# Install system dependencies (including stdio.h via build-essential)
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
+      build-essential \        # brings in libc6-dev, make, etc.
       gcc \
       libpq-dev \
       netcat-openbsd \
  && rm -rf /var/lib/apt/lists/*
 
-# Copy and install Python dependencies
+# Copy & install Python dependencies
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --upgrade pip \
+ && pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of the application code
+# Copy the rest of your code
 COPY . .
 
-# Make the entrypoint script executable
+# Make entrypoint executable
 RUN chmod +x ./entrypoint.sh
 
-# Expose Django’s default port
 EXPOSE 8000
 
-# Use the entrypoint to dispatch between web, celery, and beat
 ENTRYPOINT ["./entrypoint.sh"]
