@@ -1,0 +1,48 @@
+version: '3.8'
+services:
+  web:
+    build:
+      context: .
+    command: ["web"]
+    env_file: .env
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    ports:
+      - "8000:8000"
+    depends_on:
+      - redis
+
+  celery:
+    build:
+      context: .
+    command: ["celery"]
+    env_file: .env
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    depends_on:
+      - redis
+      - web   # ensure migrations have run
+
+  celery-beat:
+    build:
+      context: .
+    command: ["beat"]
+    env_file: .env
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    depends_on:
+      - redis
+      - web
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+
+volumes:
+  redis-data:
