@@ -34,7 +34,7 @@ case "$1" in
     exec celery -A oel worker --loglevel=info
     ;;
   beat)
-    exec celery -A oel beat --loglevel=info
+    exec celery -A oel beat --loglevel=info --scheduler=django_celery_beat.schedulers:DatabaseScheduler
     ;;
   *)
     # pass through any other command, e.g. "bash"
