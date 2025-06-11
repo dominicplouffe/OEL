@@ -194,7 +194,7 @@ STATIC_URL = "/static/"
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
-BROKER_URL = os.environ.get("CELERY_BROKER_URL", "redis://localhost:6379")
+CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL", "redis://localhost:6379")
 CELERY_RESULT_BACKEND = os.environ.get(
     "CELERY_RESULT_BACKEND", "redis://localhost:6379"
 )
@@ -214,7 +214,7 @@ TWILIO_SID = get_env_variable("TWILIO_SID", "")
 TWILIO_AUTH_TOKEN = get_env_variable("TWILIO_AUTH_TOKEN", "")
 TWILIO_PHONE = get_env_variable("TWILIO_PHONE", "")
 
-REDIS_HOST = BROKER_URL.split("/")[-1].split(":")[0]
+REDIS_HOST = CELERY_BROKER_URL.split("/")[-2].split(":")[0]
 
 # Application Settings
 ALLOW_GENERIC_EMAILS = os.environ.get("ALLOW_GENERIC_EMAILS", False)
