@@ -1,8 +1,11 @@
 version: '3.8'
+
 services:
   web:
     build:
       context: .
+    image: yourusername/oel-server-web:latest
+    container_name: oel-server-web
     command: ["web"]
     env_file: .env
     environment:
@@ -16,6 +19,8 @@ services:
   celery:
     build:
       context: .
+    image: yourusername/oel-server-celery:latest
+    container_name: oel-server-celery
     command: ["celery"]
     env_file: .env
     environment:
@@ -23,11 +28,13 @@ services:
       REDIS_PORT: 6379
     depends_on:
       - redis
-      - web   # ensure migrations have run
+      - web
 
   celery-beat:
     build:
       context: .
+    image: yourusername/oel-server-beat:latest
+    container_name: oel-server-beat
     command: ["beat"]
     env_file: .env
     environment:
@@ -39,6 +46,7 @@ services:
 
   redis:
     image: redis:7-alpine
+    container_name: oel-server-redis
     ports:
       - "6379:6379"
     volumes:
