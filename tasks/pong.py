@@ -1,7 +1,7 @@
 import os
 import django
 
-os.environ["DJANGO_SETTINGS_MODULE"] = 'oel.settings'
+os.environ["DJANGO_SETTINGS_MODULE"] = "oel.settings"
 django.setup()
 
 import pytz  # noqa
@@ -29,17 +29,14 @@ def runs_less_than(trigger, diff, pong, oncall_user):
     interval_value = _get_interval_value(trigger)
 
     if diff < interval_value:
-        reason = 'runs_less_than'
+        reason = "runs_less_than"
 
         fail_res = insert_failure(
             pong.alert,
             reason,
             500,
-            "Expected Seconds: %s - Num Seconds: %.2f" % (
-                interval_value,
-                diff
-            ),
-            oncall_user
+            "Expected Seconds: %s - Num Seconds: %.2f" % (interval_value, diff),
+            oncall_user,
         )
 
         return fail_res
@@ -52,17 +49,14 @@ def runs_more_than(trigger, diff, pong, oncall_user):
     interval_value = _get_interval_value(trigger)
 
     if diff > interval_value:
-        reason = 'runs_more_than'
+        reason = "runs_more_than"
 
         fail_res = insert_failure(
             pong.alert,
             reason,
             500,
-            "Expected Seconds: %s - Num Seconds: %.2f" % (
-                interval_value,
-                diff
-            ),
-            oncall_user
+            "Expected Seconds: %s - Num Seconds: %.2f" % (interval_value, diff),
+            oncall_user,
         )
 
         return fail_res
@@ -82,19 +76,17 @@ def start_not_triggered_in(trigger, pong, oncall_user):
 
     interval_value = _get_interval_value(trigger)
 
-    if (diff > interval_value):
+    if diff > interval_value:
 
-        reason = 'start_not_triggered'
+        reason = "start_not_triggered"
 
         fail_res = insert_failure(
             pong.alert,
             reason,
             500,
-            "Pong Start On last triggered on: %s - Num Seconds: %.2f" % (
-                pong.last_start_on,
-                diff
-            ),
-            oncall_user
+            "Pong Start On last triggered on: %s - Num Seconds: %.2f"
+            % (pong.last_start_on, diff),
+            oncall_user,
         )
 
         return fail_res
@@ -111,23 +103,21 @@ def complete_not_triggered_in(trigger, pong, oncall_user):
         if not cron.is_now_ok(pong.cron_desc):
             return
 
-    diff = (datetime.now(pytz.UTC) - pong.last_start_on).total_seconds() - 60
+    diff = (datetime.now(pytz.UTC) - pong.last_complete_on).total_seconds() - 60
 
     interval_value = _get_interval_value(trigger)
 
-    if (diff > interval_value):
+    if diff > interval_value:
 
-        reason = 'comp_not_triggered'
+        reason = "comp_not_triggered"
 
         fail_res = insert_failure(
             pong.alert,
             reason,
             500,
-            "Pong Completed On Last triggered on: %s - Num Seconds: %.2f" % (
-                pong.last_start_on,
-                diff
-            ),
-            oncall_user
+            "Pong Completed On Last triggered on: %s - Num Seconds: %.2f"
+            % (pong.last_complete_on, diff),
+            oncall_user,
         )
 
         return fail_res
@@ -136,14 +126,10 @@ def complete_not_triggered_in(trigger, pong, oncall_user):
 
 
 def heartbeat_triggered(trigger, pong, oncall_user):
-    reason = 'heartbeat_triggered'
+    reason = "heartbeat_triggered"
 
     fail_res = insert_failure(
-        pong.alert,
-        reason,
-        500,
-        "Hearbeat was triggered from your task",
-        oncall_user
+        pong.alert, reason, 500, "Hearbeat was triggered from your task", oncall_user
     )
 
     return fail_res
@@ -151,10 +137,7 @@ def heartbeat_triggered(trigger, pong, oncall_user):
 
 def process_pong(pos, push_key):
 
-    pong = models.Pong.objects.filter(
-        push_key=push_key,
-        active=True
-    ).first()
+    pong = models.Pong.objects.filter(push_key=push_key, active=True).first()
 
     if not pong:
         return False
@@ -167,32 +150,25 @@ def process_pong(pos, push_key):
     fail_res = None
     sent = False
 
-    if pos == 'start':
+    if pos == "start":
         pong.last_start_on = datetime.now(pytz.UTC)
-    elif pos == 'fail':
+    elif pos == "fail":
         try:
             trigger = models.PongTrigger.objects.get(
-                pong_id=pong.id,
-                trigger_type='heartbeat_triggered'
+                pong_id=pong.id, trigger_type="heartbeat_triggered"
             )
             fail_res = heartbeat_triggered(trigger, pong, oncall_user)
 
             success = False
 
             sent = process_result(
-                success,
-                pong.alert,
-                fail_res,
-                pong.name,
-                'pong',
-                pong.id,
-                oncall_user
+                success, pong.alert, fail_res, pong.name, "pong", pong.id, oncall_user
             )
 
         except models.PongTrigger.DoesNotExist:
             pass
 
-    elif pos == 'end':
+    elif pos == "end":
         pong.last_complete_on = datetime.now(pytz.UTC)
 
         if pong.last_start_check is None or (
@@ -201,26 +177,17 @@ def process_pong(pos, push_key):
             triggers = models.PongTrigger.objects.filter(pong_id=pong.id)
 
             trigger_actions = {
-                'runs_more_than': runs_more_than,
-                'runs_less_than': runs_less_than
+                "runs_more_than": runs_more_than,
+                "runs_less_than": runs_less_than,
             }
 
             # Get diff
             diff = datetime.now(pytz.UTC) - pong.last_start_on
 
             # Insert the metrics
-            metrics = {
-                'task_time': diff.total_seconds()
-            }
-            tags = {
-                'category': 'pong',
-                'id': pong.id
-            }
-            m = models.Metric(
-                org=pong.org,
-                metrics=metrics,
-                tags=tags
-            )
+            metrics = {"task_time": diff.total_seconds()}
+            tags = {"category": "pong", "id": pong.id}
+            m = models.Metric(org=pong.org, metrics=metrics, tags=tags)
             m.save()
 
             # Set Pong last start check date
@@ -231,10 +198,7 @@ def process_pong(pos, push_key):
                     continue
 
                 fail_res = trigger_actions[trigger.trigger_type](
-                    trigger,
-                    diff.total_seconds(),
-                    pong,
-                    oncall_user
+                    trigger, diff.total_seconds(), pong, oncall_user
                 )
 
                 if fail_res:
@@ -245,18 +209,15 @@ def process_pong(pos, push_key):
                 pong.alert,
                 fail_res,
                 pong.name,
-                'pong',
+                "pong",
                 pong.id,
                 oncall_user,
-                diff=diff.total_seconds()
+                diff=diff.total_seconds(),
             )
 
     pong.save()
 
-    return {
-        'sent': sent,
-        'pos': pos
-    }
+    return {"sent": sent, "pos": pos}
 
 
 @app.task
@@ -270,8 +231,8 @@ def process_pong_alert(pong_id):
         return
 
     trigger_actions = {
-        'start_not_triggered_in': start_not_triggered_in,
-        'complete_not_triggered_in': complete_not_triggered_in
+        "start_not_triggered_in": start_not_triggered_in,
+        "complete_not_triggered_in": complete_not_triggered_in,
     }
 
     fail_res = None
@@ -280,26 +241,16 @@ def process_pong_alert(pong_id):
         if trigger.trigger_type not in trigger_actions:
             continue
 
-        fail_res = trigger_actions[trigger.trigger_type](
-            trigger,
-            pong,
-            oncall_user
-        )
+        fail_res = trigger_actions[trigger.trigger_type](trigger, pong, oncall_user)
 
         if fail_res:
             break
 
     process_result(
-        fail_res is None,
-        pong.alert,
-        fail_res,
-        pong.name,
-        'pong',
-        pong.id,
-        oncall_user
+        fail_res is None, pong.alert, fail_res, pong.name, "pong", pong.id, oncall_user
     )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     process_pong_alert(3)
