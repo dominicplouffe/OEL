@@ -184,12 +184,6 @@ def process_pong(pos, push_key):
             # Get diff
             diff = datetime.now(pytz.UTC) - pong.last_start_on
 
-            # Insert the metrics
-            metrics = {"task_time": diff.total_seconds()}
-            tags = {"category": "pong", "id": pong.id}
-            m = models.Metric(org=pong.org, metrics=metrics, tags=tags)
-            m.save()
-
             # Set Pong last start check date
             pong.last_start_check = pong.last_start_on
 

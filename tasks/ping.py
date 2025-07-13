@@ -10,7 +10,6 @@ from datetime import datetime  # noqa
 from api import models  # noqa
 from api.common import schedule  # noqa
 from api.common import failure as fail_svc  # noqa
-import json  # noqa
 from api.common.result import process_result  # noqa
 import pytz  # noqa
 
