@@ -11,7 +11,6 @@ https://docs.djangoproject.com/en/3.1/ref/settings/
 """
 
 import os
-import datetime
 from pathlib import Path
 from corsheaders.defaults import default_headers
 from oel.celery import app
@@ -159,12 +158,7 @@ REST_FRAMEWORK = {
     ),
 }
 
-CELERY_BEAT_SCHEDULE = {
-    "test-task": {
-        "task": "task.run.run_task",
-        "schedule": crontab(minute="*/5"),  # every 5 minutes
-    },
-}
+
 # Django CORS and CSRF
 # https://github.com/OttoYiu/django-cors-headers
 CORS_ORIGIN_ALLOW_ALL = True
