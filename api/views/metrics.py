@@ -15,56 +15,55 @@ import json
 @permission_classes([AllowAny])
 def add_metrics(request, *args, **kwargs):
 
+    payload = json.loads(request.body.decode("utf-8"))
+    api_key = payload.get("api-key", None)
+
+    if not api_key:
+        return Response(
+            {"error": '"api_key" key needs to be in URL'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
     try:
-        org = Org.objects.get(api_key=kwargs["api_key"])
+        org = Org.objects.get(api_key=api_key)
     except Org.DoesNotExist:
         return Response(
             {"error": "vital metric is innactive"}, status=status.HTTP_400_BAD_REQUEST
         )
 
-    payload = json.loads(request.body.decode("utf-8"))
-
-    proceed = True
-    if vitals.is_vitals_payload(payload):
-        if not vitals.process_incoming_vitals(payload, org):
-            proceed = False
-
-    if not proceed:
-        return Response({}, status=status.HTTP_201_CREATED)
-
-    if "metrics" not in payload:
+    if "metric" not in payload:
         return Response(
-            {"error": '"metrics" key needs to be in payload'},
+            {"error": '"metric" key needs to be in payload'},
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-    if len(payload["metrics"]) == 0:
+    if len(payload["metric"]) == 0:
         return Response(
-            {"error": '"metrics" needs to contain one or more values'},
+            {"error": '"metric" needs to contain one or more values'},
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-    if "tags" not in payload:
+    if "value" not in payload:
         return Response(
-            {"error": '"tags" key needs to be in payload'},
+            {"error": '"value" key needs to be in metric payload'},
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-    if len(payload["tags"]) == 0:
+    if (
+        payload["value"] is None
+        or payload["value"] == ""
+        or not isinstance(payload["value"], (int, float))
+    ):
         return Response(
-            {"error": '"tags" needs to contain one or more values'},
+            {"error": '"value" must be a number'},
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-    if "partition" in payload["tags"]:
-        if payload["tags"]["partition"] != "/":
-            return Response({}, status=status.HTTP_201_CREATED)
-
-    if "cpu" in payload["metrics"]:
-        payload["metrics"]["cpu"] = payload["metrics"]["cpu"] / 100
-
-    m = Metric(org=org, metrics=payload["metrics"], tags=payload["tags"])
-    m.save()
+    if payload["value"] != 0:
+        m = Metric(
+            org=org, metric_name=payload["metric"], metric_value=payload["value"]
+        )
+        m.save()
 
     return Response({}, status=status.HTTP_201_CREATED)
 
@@ -84,19 +83,16 @@ def metric_sample(request, *args, **kwargs):
 @permission_classes([IsAuthenticated])
 def get_metrics_tags(request, *args, **kwargs):
     """
-    Get all tags for a given metric.
+    Get all metrics for a given metric.
     """
 
-    all_tags = Metric.objects.filter(org=request.org).values_list("tags", flat=True)
-    unique_tags = set()
-    for tags_list in all_tags:
-        if isinstance(tags_list, list):
-            unique_tags.update(tags_list)
-        elif isinstance(tags_list, dict):
-            unique_tags.update(tags_list.keys())
-    tags = list(unique_tags)
+    all_metrics = (
+        Metric.objects.filter(org=request.org)
+        .distinct("metric_name")
+        .values_list("metric_name", flat=True)
+    )
 
-    return Response({"tags": tags}, status=status.HTTP_200_OK)
+    return Response({"metrics": all_metrics}, status=status.HTTP_200_OK)
 
 
 @api_view(["GET"])
@@ -105,6 +101,67 @@ def get_metric_values(request, tag_name):
     """
     Get the values for a given metric and tags.
     """
+
+    def get_deltas(period):
+        query_delta = {
+            "1h": timedelta(hours=1),
+            "3h": timedelta(hours=3),
+            "12h": timedelta(hours=12),
+            "24h": timedelta(days=1),
+            "7d": timedelta(days=7),
+            "30d": timedelta(days=30),
+        }
+        res_delta = {
+            "1h": timedelta(minutes=1),
+            "3h": timedelta(minutes=5),
+            "12h": timedelta(minutes=30),
+            "24h": timedelta(hours=1),
+            "7d": timedelta(hours=12),
+            "30d": timedelta(days=1),
+        }
+
+        formatter = {
+            "1h": "%Y-%m-%d %H:%M",
+            "3h": "%Y-%m-%d %H:%M",
+            "12h": "%Y-%m-%d %H:%M",
+            "24h": "%Y-%m-%d %H:%M",
+            "7d": "%Y-%m-%d",
+            "30d": "%Y-%m-%d",
+        }
+
+        return query_delta, res_delta, formatter
+
+    def round_datetime(created_on, period, formatter):
+        # based on format, we need to group by the period
+        if period == "1h":  # round to the nearest minute
+            p = created_on.strftime(formatter[period])
+        elif period == "3h":  # round to the nearest 5 minutes
+            # round p.created_on to the nearest 5 minutes
+            p = created_on - timedelta(
+                minutes=created_on.minute % 5,
+                seconds=created_on.second,
+                microseconds=created_on.microsecond,
+            )
+            p = p.strftime(formatter[period])
+        elif period == "12h":  # round to the nearest 30 minutes
+            # round p.created_on to the nearest 30 minutes
+            p = created_on - timedelta(
+                minutes=created_on.minute % 30,
+                seconds=created_on.second,
+                microseconds=created_on.microsecond,
+            )
+            p = p.strftime(formatter[period])
+        elif period == "24h":  # round to the nearest hour
+            p = created_on.replace(minute=0, second=0, microsecond=0)
+            p = p.strftime(formatter[period])
+        elif period == "7d":  # round to the nearest day
+            p = created_on.replace(hour=0, minute=0, second=0, microsecond=0)
+            p = p.strftime(formatter[period])
+        else:  # round to the nearest day
+            p = created_on.replace(hour=0, minute=0, second=0, microsecond=0)
+
+        return p
+
     try:
         period = request.GET.get("period", "24h")
         if period not in ["1h", "3h", "12h", "24h", "7d", "30d"]:
@@ -113,55 +170,43 @@ def get_metric_values(request, tag_name):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        since = (
-            datetime.now(tz=timezone.utc)
-            - {
-                "1h": timedelta(hours=1),
-                "3h": timedelta(hours=3),
-                "12h": timedelta(hours=12),
-                "24h": timedelta(days=1),
-                "7d": timedelta(days=7),
-                "30d": timedelta(days=30),
-            }[period]
-        )
+        delta, res_delta, formatter = get_deltas(period)
+        since = datetime.now(tz=timezone.utc) - delta[period]
 
         metrics = Metric.objects.filter(
-            org=request.org, tags__contains=tag_name, created_on__gte=since
+            org=request.org, metric_name=tag_name, created_on__gte=since
         )
 
+        print(since, period)
+
         values = {}
+        total = 0
         for m in metrics:
-            for key, value in m.metrics.items():
-                if key not in values:
-                    values[key] = {"total": 0, "period": {}}
 
-                if period in ["1h", "3h", "12h", "24h"]:
-                    p = m.created_on.strftime("%Y-%m-%d %H:00")
-                else:
-                    p = m.created_on.strftime("%Y-%m-%d")
+            p = round_datetime(m.created_on, period, formatter)
 
-                if p not in values[key]["period"]:
-                    values[key]["period"][p] = 0
+            total += m.metric_value
+            if p not in values:
+                values[p] = {"total": 0}
+            values[p]["total"] += m.metric_value
 
-                values[key]["period"][p] += value
-                values[key]["total"] += value
+        dt = datetime.now(tz=timezone.utc) - delta[period]
+        end = datetime.now(tz=timezone.utc)
+        result = {
+            "period": period,
+            "total": total,
+            "since": dt.strftime("%Y-%m-%d %H:%M:%S"),
+            "values": [],
+        }
+        while dt <= end:
+            p = round_datetime(dt, period, formatter)
+            if p not in values:
+                values[p] = {"total": 0}
+            result["values"].append({"time": p, "value": values[p]["total"]})
+            dt += res_delta[period]
 
-                for _, v in values.items():
-                    st = since
-                    now = datetime.now(tz=timezone.utc)
-                    while st <= now:
-                        if period in ["1h", "3h", "12h", "24h"]:
-                            dt = st.strftime("%Y-%m-%d %H:00")
-                        else:
-                            dt = st.strftime("%Y-%m-%d")
-                        v["period"][dt] = v["period"].get(dt, 0)
-
-                        if period in ["1h", "3h", "12h", "24h"]:
-                            st += timedelta(hours=1)
-                        else:
-                            st += timedelta(days=1)
         return Response(
-            values,
+            result,
             status=status.HTTP_200_OK,
         )
     except Metric.DoesNotExist:

@@ -104,7 +104,7 @@ urlpatterns = [
     # Metics
     path("metrics/tags/<tag_name>", metrics.get_metric_values, name="get-tags-by-name"),
     path("metrics/tags", metrics.get_metrics_tags, name="get-tags"),
-    path("metrics/<api_key>", metrics.add_metrics, name="add-metrics"),
+    path("metrics", metrics.add_metrics, name="add-metrics"),
     path("metrics-sample", metrics.metric_sample, name="metric-sample"),
     path(
         "metric_condition/details/<int:id>/",
